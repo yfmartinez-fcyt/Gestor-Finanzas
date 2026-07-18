@@ -10,6 +10,8 @@ const { connectDB, pool } = require('./config/db');
 const authRoutes = require("./routes/authRoutes");
 const transaccionRoutes = require("./routes/transaccionRoutes");
 const usuarioRoutes = require("./routes/usuarioRoutes");
+const categoriasRoutes = require("./routes/categoriasRoutes");
+
 
 const errorHandler = require('./middleware/errorHandler');
 
@@ -69,6 +71,8 @@ app.get('/api/health', async (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/usuarios', usuarioRoutes);
 app.use("/api/transaccion", transaccionRoutes);
+app.use("/api/categorias", categoriasRoutes);
+
 
 // 404 handler
 app.use((req, res) => {
