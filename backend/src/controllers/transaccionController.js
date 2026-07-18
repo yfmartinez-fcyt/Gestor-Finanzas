@@ -30,32 +30,34 @@ const getAllTransacciones = async (req, res) => {
     if (hasta && isNaN(Date.parse(hasta))) {
       return res.status(400).json({ success: false, message: 'La fecha "hasta" no es válida' });
     }
-    
-    let query  = `
-      SELECT 
-        t.id,
-        t.usuario_id,
-        t.tipo,
-        t.importe,
-        t.descripcion,
-        t.categoria,
-        t.fecha,
-        t.created_at
-      FROM transacciones t
-      WHERE t.usuario_id = $1
-    `;
-    
-    const params = [usuario_id]; 
-    let   idx    = 2;   
-    
-     if (tipo) {
+
+    let query = `
+SELECT
+    t.id,
+    t.usuario_id,
+    t.tipo,
+    t.importe,
+    t.descripcion,
+    t.categoria_id,
+    c.nombre AS categoria,
+    t.fecha,
+    t.created_at
+FROM transacciones t
+LEFT JOIN categorias c
+ON c.id = t.categoria_id
+WHERE t.usuario_id = $1
+`;
+    const params = [usuario_id];
+    let idx = 2;
+
+    if (tipo) {
       query += ` AND t.tipo = $${idx}`;
       params.push(tipo);
       idx++;
     }
 
     if (categoria) {
-      query += ` AND t.categoria = $${idx}`;
+      query += ` AND t.categoria_id = $${idx}`;
       params.push(categoria);
       idx++;
     }
@@ -71,17 +73,17 @@ const getAllTransacciones = async (req, res) => {
       params.push(hasta);
       idx++;
     }
-    
+
     query += ` ORDER BY t.fecha DESC`;
-    
+
     const result = await pool.query(query, params);
-    
+
     res.json({
       success: true,
       count: result.rows.length,
-      data:  result.rows
+      data: result.rows
     });
-    
+
   } catch (error) {
     console.error('Error en getAllTransacciones:', error);
     res.status(500).json({ success: false, message: 'Error al obtener las transacciones' });
@@ -99,21 +101,21 @@ const getTransaccionById = async (req, res) => {
     if (!isValidId(id)) {
       return res.status(400).json({ success: false, message: 'ID de transacción inválido' });
     }
-    
+
     const result = await pool.query(
       `SELECT * FROM transacciones WHERE id = $1 AND usuario_id = $2`,
       [id, usuario_id]
     );
-    
+
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: `Transacción no encontrada o sin permisos para acceder`
       });
     }
-    
+
     res.json({ success: true, data: result.rows[0] });
-    
+
   } catch (error) {
     console.error('Error en getTransaccionById:', error);
     res.status(500).json({ success: false, message: 'Error al obtener la transacción' });
@@ -132,22 +134,22 @@ const createTransaccion = async (req, res) => {
       return res.status(400).json({ success: false, message: validation.message });
     }
 
-    const { tipo, importe, descripcion, categoria, fecha } = validation.data;
-    
+    const { tipo, importe, descripcion, categoria_id, fecha } = validation.data;
+
     const result = await pool.query(
       `INSERT INTO transacciones 
-        (usuario_id, tipo, importe, descripcion, categoria, fecha)
+        (usuario_id, tipo, importe, descripcion, categoria_id, fecha)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [usuario_id, tipo, importe, descripcion, categoria, fecha]
+      [usuario_id, tipo, importe, descripcion, categoria_id, fecha]
     );
-    
+
     res.status(201).json({
       success: true,
       message: 'Transacción creada exitosamente',
       data: result.rows[0]
     });
-    
+
   } catch (error) {
     console.error('Error en createTransaccion:', error);
     res.status(500).json({ success: false, message: 'Error al crear la transacción' });
@@ -160,7 +162,7 @@ const createTransaccion = async (req, res) => {
 const updateTransaccion = async (req, res) => {
   try {
     const { id } = req.params;
-    const { tipo, importe, descripcion, categoria, fecha } = req.body;
+    const { tipo, importe, descripcion, categoria_id, fecha } = req.body;
     const usuario_id = req.user.id;
 
     if (!isValidId(id)) {
@@ -183,13 +185,13 @@ const updateTransaccion = async (req, res) => {
         message: 'Transacción no encontrada o sin permiso'
       });
     }
-    
+
     const result = await pool.query(
       `UPDATE transacciones SET
         tipo = COALESCE($1, tipo),
         importe = COALESCE($2, importe),
         descripcion = COALESCE($3, descripcion),
-        categoria = COALESCE($4, categoria),
+        categoria_id = COALESCE($4, categoria_id),
         fecha = COALESCE($5, fecha)
        WHERE id = $6 AND usuario_id = $7
        RETURNING *`,
@@ -197,19 +199,18 @@ const updateTransaccion = async (req, res) => {
         tipo ?? null,
         importe !== undefined ? parseImporte(importe) : null,
         descripcion !== undefined ? (descripcion?.trim() || null) : null,
-        categoria !== undefined ? (categoria?.trim() || null) : null,
+        categoria_id ?? null,
         fecha ?? null,
         id,
         usuario_id
-      ]
-    );
-    
+      ]);
+
     res.json({
       success: true,
       message: 'Transacción actualizada',
       data: result.rows[0]
     });
-    
+
   } catch (error) {
     console.error('Error en updateTransaccion:', error);
     res.status(500).json({ success: false, message: 'Error al actualizar la transacción' });
@@ -227,26 +228,26 @@ const deleteTransaccion = async (req, res) => {
     if (!isValidId(id)) {
       return res.status(400).json({ success: false, message: 'ID de transacción inválido' });
     }
-    
+
     const result = await pool.query(
       `DELETE FROM transacciones 
        WHERE id = $1 AND usuario_id = $2
        RETURNING id`,
       [id, usuario_id]
     );
-    
+
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: `Transacción no encontrada o sin permiso`
       });
     }
-    
+
     res.json({
       success: true,
       message: `Transacción eliminada exitosamente`
     });
-    
+
   } catch (error) {
     console.error('Error en deleteTransaccion:', error);
     res.status(500).json({ success: false, message: 'Error al eliminar transacción' });
@@ -271,7 +272,7 @@ const getStats = async (req, res) => {
       FROM transacciones
       WHERE usuario_id = $1
     `, [usuario_id]);
-    
+
     const data = result.rows[0];
 
     res.json({
@@ -283,7 +284,7 @@ const getStats = async (req, res) => {
         balance: (Number(data.ingresos) || 0) - (Number(data.gastos) || 0)
       }
     });
-    
+
   } catch (error) {
     console.error('Error en getStats:', error);
     res.status(500).json({ success: false, message: 'Error al obtener estadísticas' });
