@@ -8,6 +8,7 @@ import Perfil from './pages/Perfil';
 import Register from './pages/Register';
 import Transaccion from './pages/Transaccion';
 import Admin from './pages/Admin';
+import Categorias from './pages/Categorias';
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
               <Route path="transaccion" element={<Transaccion />} />
               <Route path="transacciones" element={<Navigate to="/transaccion" replace />} />
               <Route path="perfil" element={<Perfil />} />
+              <Route path="categorias" element={<Categorias />} />
               <Route element={<AdminRoute />}>
                 <Route path="admin" element={<Admin />} />
               </Route>
