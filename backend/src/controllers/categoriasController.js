@@ -158,7 +158,6 @@ const editarCategoria = async (req, res) => {
 
 // Eliminar categoría
 const eliminarCategoria = async (req, res) => {
-
     const id = Number(req.params.id);
 
     if (!isValidId(id)) {
@@ -168,13 +167,29 @@ const eliminarCategoria = async (req, res) => {
     }
 
     try {
-
         const usuarioId = req.user.id;
+
+        // Verificar si la categoría está siendo utilizada
+        const uso = await pool.query(
+            `SELECT COUNT(*) AS total
+             FROM transacciones
+             WHERE categoria_id = $1
+               AND usuario_id = $2`,
+            [id, usuarioId]
+        );
+
+        const total = Number(uso.rows[0].total);
+
+        if (total > 0) {
+            return res.status(400).json({
+                message: `No se puede eliminar la categoría porque está siendo utilizada por ${total} transacción${total > 1 ? "es" : ""}.`
+            });
+        }
 
         const { rowCount } = await pool.query(
             `DELETE FROM categorias
              WHERE id = $1
-             AND usuario_id = $2`,
+               AND usuario_id = $2`,
             [id, usuarioId]
         );
 
@@ -184,18 +199,16 @@ const eliminarCategoria = async (req, res) => {
             });
         }
 
-        res.json({
+        return res.json({
             message: "Categoría eliminada correctamente"
         });
 
     } catch (error) {
+        console.error("Error al eliminar categoría:", error);
 
-        console.error(error);
-
-        res.status(500).json({
-            message: "Error al eliminar la categoría"
+        return res.status(500).json({
+            message: "Error interno del servidor al eliminar la categoría."
         });
-
     }
 
 };
