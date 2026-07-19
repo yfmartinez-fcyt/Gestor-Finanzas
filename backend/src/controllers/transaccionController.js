@@ -155,7 +155,6 @@ const createTransaccion = async (req, res) => {
     res.status(500).json({ success: false, message: 'Error al crear la transacción' });
   }
 };
-
 // ─────────────────────────────────────────────────────────────
 // PUT /api/transaccion/:id — Actualizar una transacción existente
 // ─────────────────────────────────────────────────────────────

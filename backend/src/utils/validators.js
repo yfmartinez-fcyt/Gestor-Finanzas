@@ -70,7 +70,7 @@ const validateTipoTransaccion = (tipo) => {
  * @returns {{ valid: boolean, message?: string, data?: object }}
  */
 const validateCreateTransaccion = (body) => {
-  const { tipo, importe, descripcion, categoria, fecha } = body;
+  const { tipo, importe, descripcion, categoria_id, fecha } = body;
 
   if (!tipo || importe === undefined || importe === null || importe === '') {
     return { valid: false, message: 'Tipo e importe son obligatorios' };
@@ -94,20 +94,23 @@ const validateCreateTransaccion = (body) => {
     return { valid: false, message: 'La descripción debe ser texto' };
   }
 
-  if (categoria !== undefined && categoria !== null && typeof categoria !== 'string') {
-    return { valid: false, message: 'La categoría debe ser texto' };
-  }
-
+  if (!isValidId(categoria_id)) {
   return {
-    valid: true,
-    data: {
-      tipo,
-      importe: importeParsed,
-      descripcion: descripcion?.trim() || null,
-      categoria: categoria?.trim() || null,
-      fecha: fecha || new Date(),
-    },
+    valid: false,
+    message: 'Debe seleccionar una categoría válida',
   };
+}
+
+ return {
+  valid: true,
+  data: {
+    tipo,
+    importe: importeParsed,
+    descripcion: descripcion?.trim() || null,
+    categoria_id: Number(categoria_id),
+    fecha: fecha || new Date(),
+  },
+};
 };
 
 /**
