@@ -1,8 +1,10 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from "../context/ThemeContext";
 
 export default function Layout() {
   const { user, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -21,7 +23,7 @@ export default function Layout() {
           </div>
         </div>
 
-        
+
         <nav className="nav">
           <NavLink to="/" end>
             Dashboard
@@ -33,6 +35,13 @@ export default function Layout() {
         </nav>
 
         <div className="sidebar-footer">
+          <button
+            type="button"
+            className="btn btn-secondary btn-block"
+            onClick={toggleTheme}
+          >
+            {isDark ? "☀️ Modo claro" : "🌙 Modo oscuro"}
+          </button>
           <div className="user-chip">
             <span className="avatar">{user?.nombre?.[0]?.toUpperCase() || 'U'}</span>
             <div>
