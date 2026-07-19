@@ -182,7 +182,7 @@ const eliminarCategoria = async (req, res) => {
 
         if (total > 0) {
             return res.status(400).json({
-                message: `No se puede eliminar la categoría porque está siendo utilizada por ${total} transacción${total > 1 ? "es" : ""}.`
+                message: `No se puede eliminar la categoría porque está siendo utilizada por ${total} transaccion${total > 1 ? "es" : ""}.`
             });
         }
 
