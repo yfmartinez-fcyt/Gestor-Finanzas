@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { categoriasApi } from "../services/api";
+import CategoriaModal from "./CategoriaModal";
 
 const EMPTY_FORM = {
   tipo: 'gasto',
@@ -14,6 +15,9 @@ export default function TransactionForm({ initial, onSubmit, onCancel, loading }
 
   const [categorias, setCategorias] = useState([]);
 
+  const [showCategoriaModal, setShowCategoriaModal] = useState(false);
+  const [nuevaCategoria, setNuevaCategoria] = useState("");
+
   useEffect(() => {
     cargarCategorias();
   }, []);
@@ -25,13 +29,13 @@ export default function TransactionForm({ initial, onSubmit, onCancel, loading }
   }, [initial]);
 
   const cargarCategorias = async () => {
-  try {
-    const data = await categoriasApi.list();
-    setCategorias(data);
-  } catch (error) {
-    console.error(error);
-  }
-};
+    try {
+      const data = await categoriasApi.list();
+      setCategorias(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -48,6 +52,7 @@ export default function TransactionForm({ initial, onSubmit, onCancel, loading }
   };
 
   return (
+    <>
     <form className="form panel-form" onSubmit={handleSubmit}>
       <div className="form-row">
         <label>
@@ -84,8 +89,26 @@ export default function TransactionForm({ initial, onSubmit, onCancel, loading }
       </label>
 
       <div className="form-row">
-        <label>
-          Categoría
+        <div style={{ flex: 1 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "6px",
+            }}
+          >
+            <label>Categoría</label>
+
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setShowCategoriaModal(true)}
+            >
+              + Nueva
+            </button>
+          </div>
+
           <select
             name="categoria_id"
             value={form.categoria_id}
@@ -100,11 +123,17 @@ export default function TransactionForm({ initial, onSubmit, onCancel, loading }
               </option>
             ))}
           </select>
-        </label>
+        </div>
 
         <label>
           Fecha
-          <input type="date" name="fecha" value={form.fecha} onChange={handleChange} required />
+          <input
+            type="date"
+            name="fecha"
+            value={form.fecha}
+            onChange={handleChange}
+            required
+          />
         </label>
       </div>
 
@@ -119,5 +148,25 @@ export default function TransactionForm({ initial, onSubmit, onCancel, loading }
         </button>
       </div>
     </form>
+
+    {showCategoriaModal && (
+      <CategoriaModal
+        nombre={nuevaCategoria}
+        setNombre={setNuevaCategoria}
+        onClose={() => setShowCategoriaModal(false)}
+        onCreated={async (categoria) => {
+          await cargarCategorias();
+
+          setForm((prev) => ({
+            ...prev,
+            categoria_id: categoria.id,
+          }));
+
+          setShowCategoriaModal(false);
+        }}
+      />
+    )
+  }
+  </>
   );
 }
