@@ -54,9 +54,11 @@ export default function Layout() {
             Perfil
           </NavLink>
 
-          <NavLink to="/admin" onClick={closeMenu}>
-            Administración
-          </NavLink>
+          {user?.rol === "admin" && (
+            <NavLink to="/admin" onClick={closeMenu}>
+              Administración
+            </NavLink>
+          )}
         </nav>
 
         <div className="sidebar-footer">
