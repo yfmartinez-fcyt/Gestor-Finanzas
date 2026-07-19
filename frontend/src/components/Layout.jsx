@@ -21,11 +21,13 @@ export default function Layout() {
           </div>
         </div>
 
+        
         <nav className="nav">
           <NavLink to="/" end>
             Dashboard
           </NavLink>
           <NavLink to="/transaccion">Transacciones</NavLink>
+          <NavLink to="/categorias">Categorías</NavLink>
           <NavLink to="/perfil">Perfil</NavLink>
           {user?.rol === 'admin' && <NavLink to="/admin">Administración</NavLink>}
         </nav>
