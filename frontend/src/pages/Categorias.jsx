@@ -79,7 +79,7 @@ export default function Categorias() {
       <header className="page-header">
         <div>
           <h1>Categorías</h1>
-          <p><p>Administra las categorías que utilizarás en tus transacciones.</p>.</p>
+          <p>Administra las categorías que utilizarás en tus transacciones.</p>
         </div>
 
         <button

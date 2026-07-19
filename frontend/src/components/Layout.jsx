@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from "../context/ThemeContext";
@@ -6,15 +7,28 @@ export default function Layout() {
   const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
+    setMenuOpen(false);
+  };
+
+  const closeMenu = () => {
+    setMenuOpen(false);
   };
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      <button
+        className="menu-toggle"
+        onClick={() => setMenuOpen(!menuOpen)}
+      >
+        {menuOpen ? "✕" : "☰"}
+      </button>
+
+      <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
         <div className="brand">
           <span className="brand-icon">GF</span>
           <div>
@@ -25,13 +39,24 @@ export default function Layout() {
 
 
         <nav className="nav">
-          <NavLink to="/" end>
+          <NavLink to="/" end onClick={closeMenu}>
             Dashboard
           </NavLink>
-          <NavLink to="/transaccion">Transacciones</NavLink>
-          <NavLink to="/categorias">Categorías</NavLink>
-          <NavLink to="/perfil">Perfil</NavLink>
-          {user?.rol === 'admin' && <NavLink to="/admin">Administración</NavLink>}
+          <NavLink to="/transaccion" onClick={closeMenu}>
+            Transacciones
+          </NavLink>
+
+          <NavLink to="/categorias" onClick={closeMenu}>
+            Categorías
+          </NavLink>
+
+          <NavLink to="/perfil" onClick={closeMenu}>
+            Perfil
+          </NavLink>
+
+          <NavLink to="/admin" onClick={closeMenu}>
+            Administración
+          </NavLink>
         </nav>
 
         <div className="sidebar-footer">
