@@ -14,24 +14,24 @@ export default function TransactionForm({ initial, onSubmit, onCancel, loading }
 
   const [categorias, setCategorias] = useState([]);
 
-    useEffect(() => {
-      cargarCategorias();
-    }, []);
+  useEffect(() => {
+    cargarCategorias();
+  }, []);
 
-    useEffect(() => {
-      if (initial) {
-        setForm(initial);
-      }
-    }, [initial]);
+  useEffect(() => {
+    if (initial) {
+      setForm(initial);
+    }
+  }, [initial]);
 
-    const cargarCategorias = async () => {
-      try {
-        const data = await categoriasApi.list();
-        setCategorias(data);
-      } catch (error) {
-        console.error(error);
-      }
-    };
+  const cargarCategorias = async () => {
+  try {
+    const data = await categoriasApi.list();
+    setCategorias(data);
+  } catch (error) {
+    console.error(error);
+  }
+};
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -94,13 +94,11 @@ export default function TransactionForm({ initial, onSubmit, onCancel, loading }
           >
             <option value="">Seleccione una categoría</option>
 
-            {categorias
-              .filter((c) => c.tipo === form.tipo)
-              .map((categoria) => (
-                <option key={categoria.id} value={categoria.id}>
-                  {categoria.nombre}
-                </option>
-              ))}
+            {categorias.map((categoria) => (
+              <option key={categoria.id} value={categoria.id}>
+                {categoria.nombre}
+              </option>
+            ))}
           </select>
         </label>
 

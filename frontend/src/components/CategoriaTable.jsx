@@ -9,7 +9,6 @@ export default function CategoriaTable({
         <thead>
           <tr>
             <th>Nombre</th>
-            <th>Tipo</th>
             <th>Acciones</th>
           </tr>
         </thead>
@@ -18,12 +17,6 @@ export default function CategoriaTable({
           {items.map((item) => (
             <tr key={item.id}>
               <td>{item.nombre}</td>
-
-              <td>
-                <span className={`badge badge-${item.tipo}`}>
-                  {item.tipo}
-                </span>
-              </td>
 
               <td className="actions">
                 <button

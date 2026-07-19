@@ -7,9 +7,8 @@ export default function CategoriaForm({
   loading,
 }) {
   const [form, setForm] = useState({
-    nombre: "",
-    tipo: "gasto",
-  });
+  nombre: "",
+});
 
   useEffect(() => {
     if (initial) {
@@ -39,18 +38,6 @@ export default function CategoriaForm({
           onChange={handleChange}
           required
         />
-      </label>
-
-      <label>
-        Tipo
-        <select
-          name="tipo"
-          value={form.tipo}
-          onChange={handleChange}
-        >
-          <option value="gasto">Gasto</option>
-          <option value="ingreso">Ingreso</option>
-        </select>
       </label>
 
       <div className="form-actions">

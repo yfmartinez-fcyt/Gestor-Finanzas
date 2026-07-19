@@ -99,26 +99,50 @@ const getTransaccionById = async (req, res) => {
     const usuario_id = req.user.id;
 
     if (!isValidId(id)) {
-      return res.status(400).json({ success: false, message: 'ID de transacción inválido' });
+      return res.status(400).json({
+        success: false,
+        message: "ID de transacción inválido",
+      });
     }
 
     const result = await pool.query(
-      `SELECT * FROM transacciones WHERE id = $1 AND usuario_id = $2`,
+      `SELECT
+          t.id,
+          t.usuario_id,
+          t.tipo,
+          t.importe,
+          t.descripcion,
+          t.categoria_id,
+          c.nombre AS categoria,
+          t.fecha,
+          t.created_at
+       FROM transacciones t
+       LEFT JOIN categorias c
+         ON c.id = t.categoria_id
+       WHERE t.id = $1
+         AND t.usuario_id = $2`,
       [id, usuario_id]
     );
 
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: `Transacción no encontrada o sin permisos para acceder`
+        message: "Transacción no encontrada o sin permisos para acceder",
       });
     }
 
-    res.json({ success: true, data: result.rows[0] });
+    return res.json({
+      success: true,
+      data: result.rows[0],
+    });
 
   } catch (error) {
-    console.error('Error en getTransaccionById:', error);
-    res.status(500).json({ success: false, message: 'Error al obtener la transacción' });
+    console.error("Error en getTransaccionById:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener la transacción",
+    });
   }
 };
 
@@ -130,29 +154,66 @@ const createTransaccion = async (req, res) => {
     const usuario_id = req.user.id;
 
     const validation = validateCreateTransaccion(req.body);
+
     if (!validation.valid) {
-      return res.status(400).json({ success: false, message: validation.message });
+      return res.status(400).json({
+        success: false,
+        message: validation.message,
+      });
     }
 
-    const { tipo, importe, descripcion, categoria_id, fecha } = validation.data;
+    const {
+      tipo,
+      importe,
+      descripcion,
+      categoria_id,
+      fecha,
+    } = validation.data;
+
+    // Verificar que la categoría exista y pertenezca al usuario
+    const categoria = await pool.query(
+      `SELECT id
+       FROM categorias
+       WHERE id = $1
+         AND usuario_id = $2`,
+      [categoria_id, usuario_id]
+    );
+
+    if (categoria.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "La categoría seleccionada no existe.",
+      });
+    }
 
     const result = await pool.query(
-      `INSERT INTO transacciones 
+      `INSERT INTO transacciones
         (usuario_id, tipo, importe, descripcion, categoria_id, fecha)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [usuario_id, tipo, importe, descripcion, categoria_id, fecha]
+      [
+        usuario_id,
+        tipo,
+        importe,
+        descripcion,
+        categoria_id,
+        fecha,
+      ]
     );
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
-      message: 'Transacción creada exitosamente',
-      data: result.rows[0]
+      message: "Transacción creada exitosamente",
+      data: result.rows[0],
     });
 
   } catch (error) {
-    console.error('Error en createTransaccion:', error);
-    res.status(500).json({ success: false, message: 'Error al crear la transacción' });
+    console.error("Error en createTransaccion:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Error al crear la transacción",
+    });
   }
 };
 // ─────────────────────────────────────────────────────────────
@@ -165,34 +226,64 @@ const updateTransaccion = async (req, res) => {
     const usuario_id = req.user.id;
 
     if (!isValidId(id)) {
-      return res.status(400).json({ success: false, message: 'ID de transacción inválido' });
+      return res.status(400).json({
+        success: false,
+        message: "ID de transacción inválido",
+      });
     }
 
     const validation = validateUpdateTransaccion(req.body);
+
     if (!validation.valid) {
-      return res.status(400).json({ success: false, message: validation.message });
+      return res.status(400).json({
+        success: false,
+        message: validation.message,
+      });
     }
 
     const exists = await pool.query(
-      `SELECT id FROM transacciones WHERE id = $1 AND usuario_id = $2`,
+      `SELECT id
+       FROM transacciones
+       WHERE id = $1
+         AND usuario_id = $2`,
       [id, usuario_id]
     );
 
     if (exists.rows.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'Transacción no encontrada o sin permiso'
+        message: "Transacción no encontrada o sin permiso",
       });
     }
 
+    // Verificar que la categoría exista y pertenezca al usuario
+    if (categoria_id !== undefined) {
+      const categoria = await pool.query(
+        `SELECT id
+         FROM categorias
+         WHERE id = $1
+           AND usuario_id = $2`,
+        [categoria_id, usuario_id]
+      );
+
+      if (categoria.rows.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "La categoría seleccionada no existe.",
+        });
+      }
+    }
+
     const result = await pool.query(
-      `UPDATE transacciones SET
-        tipo = COALESCE($1, tipo),
-        importe = COALESCE($2, importe),
-        descripcion = COALESCE($3, descripcion),
-        categoria_id = COALESCE($4, categoria_id),
-        fecha = COALESCE($5, fecha)
-       WHERE id = $6 AND usuario_id = $7
+      `UPDATE transacciones
+       SET
+         tipo = COALESCE($1, tipo),
+         importe = COALESCE($2, importe),
+         descripcion = COALESCE($3, descripcion),
+         categoria_id = COALESCE($4, categoria_id),
+         fecha = COALESCE($5, fecha)
+       WHERE id = $6
+         AND usuario_id = $7
        RETURNING *`,
       [
         tipo ?? null,
@@ -201,18 +292,23 @@ const updateTransaccion = async (req, res) => {
         categoria_id ?? null,
         fecha ?? null,
         id,
-        usuario_id
-      ]);
+        usuario_id,
+      ]
+    );
 
-    res.json({
+    return res.json({
       success: true,
-      message: 'Transacción actualizada',
-      data: result.rows[0]
+      message: "Transacción actualizada",
+      data: result.rows[0],
     });
 
   } catch (error) {
-    console.error('Error en updateTransaccion:', error);
-    res.status(500).json({ success: false, message: 'Error al actualizar la transacción' });
+    console.error("Error en updateTransaccion:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Error al actualizar la transacción",
+    });
   }
 };
 

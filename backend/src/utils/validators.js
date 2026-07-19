@@ -118,8 +118,8 @@ const validateCreateTransaccion = (body) => {
  * @returns {{ valid: boolean, message?: string }}
  */
 const validateUpdateTransaccion = (body) => {
-  const { tipo, importe, descripcion, categoria, fecha } = body;
-  const fields = [tipo, importe, descripcion, categoria, fecha];
+  const { tipo, importe, descripcion, categoria_id, fecha } = body;
+  const fields = [tipo, importe, descripcion, categoria_id, fecha];
   const hasField = fields.some((v) => v !== undefined);
 
   if (!hasField) {
@@ -145,9 +145,12 @@ const validateUpdateTransaccion = (body) => {
     return { valid: false, message: 'La descripción debe ser texto' };
   }
 
-  if (categoria !== undefined && categoria !== null && typeof categoria !== 'string') {
-    return { valid: false, message: 'La categoría debe ser texto' };
-  }
+  if (categoria_id !== undefined && !isValidId(categoria_id)) {
+  return {
+    valid: false,
+    message: 'Debe seleccionar una categoría válida'
+  };
+}
 
   return { valid: true };
 };

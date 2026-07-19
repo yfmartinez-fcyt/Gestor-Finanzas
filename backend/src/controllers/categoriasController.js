@@ -68,45 +68,47 @@ const obtenerCategoriaPorId = async (req, res) => {
 
 // Crear categoría
 const crearCategoria = async (req, res) => {
-
     try {
-
         const usuarioId = req.user.id;
 
-        const { nombre, tipo } = req.body;
+        const { nombre } = req.body;
 
-        if (!nombre || !tipo) {
+        if (!nombre || !nombre.trim()) {
             return res.status(400).json({
-                message: "Todos los campos son obligatorios"
+                message: "El nombre es obligatorio"
             });
         }
 
-        if (tipo !== "ingreso" && tipo !== "gasto") {
+        const existe = await pool.query(
+            `SELECT id
+             FROM categorias
+             WHERE usuario_id = $1
+             AND LOWER(nombre) = LOWER($2)`,
+            [usuarioId, nombre.trim()]
+        );
+
+        if (existe.rows.length > 0) {
             return res.status(400).json({
-                message: "Tipo inválido"
+                message: "Ya existe una categoría con ese nombre."
             });
         }
 
         const { rows } = await pool.query(
-            `INSERT INTO categorias
-            (nombre, tipo, usuario_id)
-            VALUES ($1,$2,$3)
-            RETURNING *`,
-            [nombre, tipo, usuarioId]
+            `INSERT INTO categorias (nombre, usuario_id)
+             VALUES ($1, $2)
+             RETURNING *`,
+            [nombre.trim(), usuarioId]
         );
 
         res.status(201).json(rows[0]);
 
     } catch (error) {
-
         console.error(error);
 
         res.status(500).json({
             message: "Error al crear la categoría"
         });
-
     }
-
 };
 
 // Editar categoría
@@ -123,17 +125,36 @@ const editarCategoria = async (req, res) => {
     try {
 
         const usuarioId = req.user.id;
+        const { nombre } = req.body;
 
-        const { nombre, tipo } = req.body;
+        if (!nombre || !nombre.trim()) {
+            return res.status(400).json({
+                message: "El nombre es obligatorio"
+            });
+        }
+
+        const existe = await pool.query(
+            `SELECT id
+             FROM categorias
+             WHERE usuario_id = $1
+               AND LOWER(nombre) = LOWER($2)
+               AND id <> $3`,
+            [usuarioId, nombre.trim(), id]
+        );
+
+        if (existe.rows.length > 0) {
+            return res.status(400).json({
+                message: "Ya existe una categoría con ese nombre."
+            });
+        }
 
         const { rows } = await pool.query(
             `UPDATE categorias
-             SET nombre = $1,
-                 tipo = $2
-             WHERE id = $3
-             AND usuario_id = $4
+             SET nombre = $1
+             WHERE id = $2
+               AND usuario_id = $3
              RETURNING *`,
-            [nombre, tipo, id, usuarioId]
+            [nombre.trim(), id, usuarioId]
         );
 
         if (rows.length === 0) {
