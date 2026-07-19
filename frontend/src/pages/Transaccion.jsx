@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import TransactionForm from '../components/TransactionForm';
-import { transaccionApi } from '../services/api';
+import { transaccionApi, categoriasApi } from '../services/api';
 import { formatCurrency, formatDate, toInputDate } from '../utils/format';
 
 export default function Transaccion() {
   const [items, setItems] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const [filters, setFilters] = useState({
     tipo: '',
     categoria: '',
@@ -18,21 +19,46 @@ export default function Transaccion() {
   const [saving, setSaving] = useState(false);
 
   const loadItems = async () => {
-    setLoading(true);
-    setError('');
+  setLoading(true);
+  setError("");
+
+  try {
+    const data = await transaccionApi.list(filters);
+    setItems(data.data);
+  } catch (err) {
+    console.error("Error completo:", err);
+
+    if (err.response) {
+      console.error("Status:", err.response.status);
+      console.error("Respuesta:", err.response.data);
+    }
+
+    setError(
+      err.response?.data?.message ||
+      err.message ||
+      "Error al obtener las transacciones"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const loadCategorias = async () => {
     try {
-      const data = await transaccionApi.list(filters);
-      setItems(data.data);
+      const data = await categoriasApi.list();
+      setCategorias(data);
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      console.error(err);
     }
   };
 
   useEffect(() => {
     loadItems();
   }, [filters.tipo, filters.categoria, filters.desde, filters.hasta]);
+
+  useEffect(() => {
+    loadCategorias();
+  }, []);
 
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
@@ -100,7 +126,7 @@ export default function Transaccion() {
       {showForm && !editing && (
         <section className="panel">
           <h2>Nueva transacción</h2>
-          <TransactionForm onSubmit={handleCreate} loading={saving} />
+          <TransactionForm categorias={categorias} onSubmit={handleCreate} loading={saving} />
         </section>
       )}
 
@@ -112,7 +138,7 @@ export default function Transaccion() {
               tipo: editing.tipo,
               importe: String(editing.importe),
               descripcion: editing.descripcion || '',
-              categoria: editing.categoria || '',
+              categoria_id: editing.categoria_id || '',
               fecha: toInputDate(editing.fecha),
             }}
             onSubmit={handleUpdate}
@@ -134,13 +160,19 @@ export default function Transaccion() {
           </label>
           <label>
             Categoría
-            <input
-              type="text"
+            <select
               name="categoria"
               value={filters.categoria}
               onChange={handleFilterChange}
-              placeholder="Filtrar categoría"
-            />
+            >
+              <option value="">Todas</option>
+
+              {categorias.map((categoria) => (
+                <option key={categoria.id} value={categoria.id}>
+                  {categoria.nombre}
+                </option>
+              ))}
+            </select>
           </label>
           <label>
             Desde

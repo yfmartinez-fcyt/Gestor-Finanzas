@@ -137,6 +137,27 @@ export const transaccionApi = {
     }),
 };
 
+export const categoriasApi = {
+  list: () => apiRequest("/api/categorias"),
+
+  create: (payload) =>
+    apiRequest("/api/categorias", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  update: (id, payload) =>
+    apiRequest(`/api/categorias/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+
+  remove: (id) =>
+    apiRequest(`/api/categorias/${id}`, {
+      method: "DELETE",
+    }),
+};
+
 export const usuariosApi = {
   list: () => apiRequest('/api/usuarios'),
 
@@ -154,4 +175,6 @@ export const usuariosApi = {
     apiRequest(`/api/usuarios/sessions/${sessionId}`, {
       method: 'DELETE',
     }),
+
+    
 };
