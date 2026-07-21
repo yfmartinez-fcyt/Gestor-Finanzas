@@ -45,15 +45,15 @@ export default function Layout() {
           <NavLink to="/transaccion" onClick={closeMenu}>
             Transacciones
           </NavLink>
-
+          <NavLink to="/metas" onClick={closeMenu}>
+            Metas
+          </NavLink>
           <NavLink to="/categorias" onClick={closeMenu}>
             Categorías
           </NavLink>
-
           <NavLink to="/perfil" onClick={closeMenu}>
             Perfil
           </NavLink>
-
           {user?.rol === "admin" && (
             <NavLink to="/admin" onClick={closeMenu}>
               Administración

@@ -175,6 +175,28 @@ export const usuariosApi = {
     apiRequest(`/api/usuarios/sessions/${sessionId}`, {
       method: 'DELETE',
     }),
+};
 
-    
+export const metasApi = {
+  list: () => apiRequest('/api/metas'),
+
+  get: (id) =>
+    apiRequest(`/api/metas/${id}`),
+
+  create: (payload) =>
+    apiRequest('/api/metas', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  update: (id, payload) =>
+    apiRequest(`/api/metas/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+
+  remove: (id) =>
+    apiRequest(`/api/metas/${id}`, {
+      method: 'DELETE',
+    }),
 };
