@@ -130,18 +130,20 @@ export default function Metas() {
       {metas.length === 0 ? (
         <p>No existen metas registradas.</p>
       ) : (
-        <div className="cards-grid">
-          {metas.map((meta) => (
-            <MetaCard
-              key={meta.id}
-              meta={meta}
-              onEdit={() => {
-                setMetaSeleccionada(meta);
-                setMostrarFormulario(true);
-              }}
-              onDelete={() => eliminarMeta(meta.id)}
-            />
-          ))}
+        <div className="metas-content">
+          <div className="cards-grid">
+            {metas.map((meta) => (
+              <MetaCard
+                key={meta.id}
+                meta={meta}
+                onEdit={() => {
+                  setMetaSeleccionada(meta);
+                  setMostrarFormulario(true);
+                }}
+                onDelete={() => eliminarMeta(meta.id)}
+              />
+            ))}
+          </div>
         </div>
       )}
 

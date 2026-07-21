@@ -1,3 +1,10 @@
+import {
+  Wallet,
+  Target,
+  CircleDollarSign,
+  Calendar
+} from "lucide-react";
+
 export default function MetaCard({ meta, onEdit, onDelete }) {
   const porcentaje = Math.min(
     100,
@@ -16,7 +23,9 @@ export default function MetaCard({ meta, onEdit, onDelete }) {
     <div className="meta-card">
       <div className="meta-header">
         <h3>{meta.nombre}</h3>
-        <span className={`estado ${meta.estado}`}>
+        <span
+          className={`estado estado-${meta.estado.toLowerCase()}`}
+        >
           {meta.estado}
         </span>
       </div>
@@ -25,38 +34,54 @@ export default function MetaCard({ meta, onEdit, onDelete }) {
         <p className="descripcion">{meta.descripcion}</p>
       )}
 
-      <div className="progress">
+      <div className="progress-bar meta-progress">
         <div
-          className="progress-bar"
-          style={{ width: `${porcentaje}%` }}
-        ></div>
+          className="progress-fill"
+          style={{
+            width: `${porcentaje}%`,
+            background:
+              porcentaje >= 100
+                ? "#22c55e"
+                : porcentaje >= 70
+                  ? "#3b82f6"
+                  : porcentaje >= 40
+                    ? "#f59e0b"
+                    : "#ef4444",
+          }}
+        />
       </div>
 
       <p>
         <strong>{porcentaje}% completado</strong>
       </p>
 
-      <p>
-        <strong>Ahorrado:</strong> Gs.{" "}
-        {formatearMoneda(meta.monto_actual)}
-      </p>
-
-      <p>
-        <strong>Objetivo:</strong> Gs.{" "}
-        {formatearMoneda(meta.monto_objetivo)}
-      </p>
-
-      <p>
-        <strong>Faltan:</strong> Gs.{" "}
-        {formatearMoneda(restante)}
-      </p>
-
-      {meta.fecha_limite && (
+      <div className="meta-info">
         <p>
-          <strong>Fecha límite:</strong>{" "}
-          {new Date(meta.fecha_limite).toLocaleDateString()}
+          <Wallet size={18} />
+          <strong>Ahorrado:</strong>
+          <span>{formatearMoneda(meta.monto_actual)}</span>
         </p>
-      )}
+
+        <p>
+          <Target size={18} />
+          <strong>Objetivo:</strong>
+          <span>{formatearMoneda(meta.monto_objetivo)}</span>
+        </p>
+
+        <p>
+          <CircleDollarSign size={18} />
+          <strong>Faltan:</strong>
+          <span>{formatearMoneda(restante)}</span>
+        </p>
+
+        {meta.fecha_limite && (
+          <p>
+            <Calendar size={18} />
+            <strong>Fecha límite:</strong>
+            <span>{new Date(meta.fecha_limite).toLocaleDateString()}</span>
+          </p>
+        )}
+      </div>
 
       <div className="meta-actions">
         <button
