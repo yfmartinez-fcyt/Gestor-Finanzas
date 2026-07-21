@@ -127,25 +127,31 @@ export default function Metas() {
         </section>
       )}
 
-      {metas.length === 0 ? (
-        <p>No existen metas registradas.</p>
-      ) : (
-        <div className="metas-content">
-          <div className="cards-grid">
-            {metas.map((meta) => (
-              <MetaCard
-                key={meta.id}
-                meta={meta}
-                onEdit={() => {
-                  setMetaSeleccionada(meta);
-                  setMostrarFormulario(true);
-                }}
-                onDelete={() => eliminarMeta(meta.id)}
-              />
-            ))}
+      <section className="panel">
+
+        {metas.length === 0 ? (
+          <div className="empty-state">
+            <p>No existen metas registradas.</p>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="metas-content">
+            <div className="cards-grid">
+              {metas.map((meta) => (
+                <MetaCard
+                  key={meta.id}
+                  meta={meta}
+                  onEdit={() => {
+                    setMetaSeleccionada(meta);
+                    setMostrarFormulario(true);
+                  }}
+                  onDelete={() => eliminarMeta(meta.id)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+      </section>
 
     </div>
   );
