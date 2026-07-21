@@ -271,6 +271,125 @@ const validateTipoQuery = (tipo) => {
   return validateTipoTransaccion(tipo);
 };
 
+const validateCreateMeta = (body) => {
+  const {
+    nombre,
+    descripcion,
+    monto_objetivo,
+    monto_actual,
+    fecha_limite,
+    estado,
+  } = body;
+
+  if (!nombre?.trim()) {
+    return {
+      valid: false,
+      message: "El nombre es obligatorio",
+    };
+  }
+
+  if (isNaN(Number(monto_objetivo)) || Number(monto_objetivo) <= 0) {
+    return {
+      valid: false,
+      message: "El monto objetivo debe ser mayor a cero",
+    };
+  }
+
+  return {
+    valid: true,
+    data: {
+      nombre: nombre.trim(),
+      descripcion: descripcion?.trim() || null,
+      monto_objetivo: Number(monto_objetivo),
+      monto_actual: Number(monto_actual) || 0,
+      fecha_limite: fecha_limite || null,
+      estado: estado || "activa",
+    },
+  };
+};
+
+const validateUpdateMeta = (body) => {
+  const {
+    nombre,
+    descripcion,
+    monto_objetivo,
+    monto_actual,
+    fecha_limite,
+    estado,
+  } = body;
+
+  const fields = [
+    nombre,
+    descripcion,
+    monto_objetivo,
+    monto_actual,
+    fecha_limite,
+    estado,
+  ];
+
+  const hasField = fields.some((v) => v !== undefined);
+
+  if (!hasField) {
+    return {
+      valid: false,
+      message: "Debe enviar al menos un campo para actualizar",
+    };
+  }
+
+  if (nombre !== undefined) {
+    if (typeof nombre !== "string" || !nombre.trim()) {
+      return {
+        valid: false,
+        message: "El nombre es obligatorio",
+      };
+    }
+  }
+
+  if (
+    monto_objetivo !== undefined &&
+    (isNaN(Number(monto_objetivo)) || Number(monto_objetivo) <= 0)
+  ) {
+    return {
+      valid: false,
+      message: "El monto objetivo debe ser mayor a cero",
+    };
+  }
+
+  if (
+    monto_actual !== undefined &&
+    (isNaN(Number(monto_actual)) || Number(monto_actual) < 0)
+  ) {
+    return {
+      valid: false,
+      message: "El monto actual no es válido",
+    };
+  }
+
+  if (
+    fecha_limite !== undefined &&
+    fecha_limite !== null &&
+    fecha_limite !== "" &&
+    !isValidDate(fecha_limite)
+  ) {
+    return {
+      valid: false,
+      message: "La fecha límite no es válida",
+    };
+  }
+
+  if (
+    estado !== undefined &&
+    !["activa", "completada", "cancelada"].includes(estado)
+  ) {
+    return {
+      valid: false,
+      message: 'El estado debe ser "activa", "completada" o "cancelada"',
+    };
+  }
+
+  return { valid: true };
+};
+
 module.exports = {
   isValidId,
   parseImporte,
@@ -282,4 +401,6 @@ module.exports = {
   validateUpdateTransaccion,
   validateUpdateUser,
   validateTipoQuery,
+  validateCreateMeta,
+  validateUpdateMeta,
 };

@@ -12,22 +12,17 @@ const {
     getStats
 } = require('../controllers/transaccionController');
 
-
 router.use(authMiddleware);
 
-
 router.get('/stats', getStats);
-
 
 router.route('/')
     .get(getAllTransacciones)
     .post(createTransaccion);
 
-
 router.route('/:id')
     .get(getTransaccionById)
     .put(updateTransaccion)
     .delete(deleteTransaccion);
-
 
 module.exports = router;

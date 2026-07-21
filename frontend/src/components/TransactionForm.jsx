@@ -79,12 +79,12 @@ export default function TransactionForm({ initial, onSubmit, onCancel, loading }
 
       <label>
         Descripción
-        <input
-          type="text"
+        <textarea
           name="descripcion"
           value={form.descripcion}
           onChange={handleChange}
           placeholder="Ej. Supermercado, nómina..."
+          rows="3"
         />
       </label>
 

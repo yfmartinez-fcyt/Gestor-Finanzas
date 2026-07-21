@@ -11,6 +11,7 @@ const authRoutes = require("./routes/authRoutes");
 const transaccionRoutes = require("./routes/transaccionRoutes");
 const usuarioRoutes = require("./routes/usuarioRoutes");
 const categoriasRoutes = require("./routes/categoriasRoutes");
+const metasRoutes = require("./routes/metasRoutes");
 
 
 const errorHandler = require('./middleware/errorHandler');
@@ -72,6 +73,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/usuarios', usuarioRoutes);
 app.use("/api/transaccion", transaccionRoutes);
 app.use("/api/categorias", categoriasRoutes);
+app.use("/api/metas", metasRoutes);
 
 
 // 404 handler
