@@ -49,7 +49,10 @@ Aplicación web de gestión de finanzas personales con autenticación JWT, panel
 - Registro e inicio de sesión de usuarios
 - Dashboard con balance, ingresos y gastos
 - Crear, editar, filtrar y eliminar transacciones
+- Gestión de categorías personalizadas por usuario
+- Metas de ahorro (crear, editar, eliminar y seguimiento de progreso)
 - Edición de perfil de usuario
+- Tema claro / oscuro
 - Roles `usuario` y `admin` con panel de administración (gestión de usuarios y sesiones)
 
 ---
@@ -78,15 +81,27 @@ Aplicación web de gestión de finanzas personales con autenticación JWT, panel
 
 ```
 Gestor-Finanzas/
+├── .vscode/                    # Tareas y depuración de VS Code
+├── docs/                       # Guías de instalación adicionales
 ├── backend/
 │   ├── database/
-│   │   └── schema.sql          # Esquema SQL inicial
+│   │   └── schema.sql          # Crea la BD y el esquema SQL
 │   ├── src/
 │   │   ├── config/
 │   │   │   └── db.js           # Conexión a PostgreSQL
-│   │   ├── controllers/        # Lógica de negocio
+│   │   ├── controllers/
+│   │   │   ├── authController.js
+│   │   │   ├── categoriasController.js
+│   │   │   ├── metasController.js
+│   │   │   ├── transaccionController.js
+│   │   │   └── usuarioController.js
 │   │   ├── middleware/         # Auth, roles, errores
-│   │   ├── routes/             # Rutas de la API
+│   │   ├── routes/
+│   │   │   ├── authRoutes.js
+│   │   │   ├── categoriasRoutes.js
+│   │   │   ├── metasRoutes.js
+│   │   │   ├── transaccionRoutes.js
+│   │   │   └── usuarioRoutes.js
 │   │   ├── utils/              # Validadores de datos
 │   │   ├── app.js              # Configuración Express
 │   │   └── server.js           # Punto de entrada
@@ -96,13 +111,25 @@ Gestor-Finanzas/
 ├── frontend/
 │   ├── public/
 │   ├── src/
-│   │   ├── components/         # Layout, formularios, rutas protegidas
-│   │   ├── context/            # AuthContext
-│   │   ├── pages/              # Dashboard, Login, Transaccion, Admin...
+│   │   ├── assets/
+│   │   ├── components/         # Layout, formularios, tablas, rutas protegidas
+│   │   ├── context/
+│   │   │   ├── AuthContext.jsx
+│   │   │   └── ThemeContext.jsx
+│   │   ├── pages/
+│   │   │   ├── Admin.jsx
+│   │   │   ├── Categorias.jsx
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── Login.jsx
+│   │   │   ├── Metas.jsx
+│   │   │   ├── Perfil.jsx
+│   │   │   ├── Register.jsx
+│   │   │   └── Transaccion.jsx
 │   │   ├── services/
 │   │   │   └── api.js          # Cliente HTTP hacia el backend
 │   │   ├── utils/
 │   │   ├── App.jsx
+│   │   ├── index.css
 │   │   └── main.jsx
 │   ├── .env.example
 │   ├── vite.config.js
@@ -154,29 +181,36 @@ npm install
 
 ## Configuración de la base de datos
 
-### 1. Crear la base de datos
+### 1. Ejecutar el esquema
 
-En **pgAdmin** o en la terminal de PostgreSQL:
-
-```sql
-CREATE DATABASE gestor_finanzas;
-```
-
-### 2. Ejecutar el esquema
+Desde la raíz del proyecto (`Gestor-Finanzas`), conectado a la BD por defecto `postgres`:
 
 ```powershell
-psql -U postgres -d gestor_finanzas -f backend/database/schema.sql
+psql -U postgres -f backend/database/schema.sql
 ```
 
-Esto crea las siguientes tablas:
+El script `schema.sql`:
+1. Crea la base de datos `gestor_finanzas` si no existe
+2. Se conecta a ella
+3. Crea las tablas e índices
 
 | Tabla | Descripción |
 |-------|-------------|
 | `usuarios` | Datos de usuario y rol |
 | `refresh_tokens` | Sesiones activas |
-| `transacciones` | Ingresos y gastos |
+| `categorias` | Categorías personalizadas por usuario |
+| `transacciones` | Ingresos y gastos (referencia a `categorias`) |
+| `metas` | Metas de ahorro del usuario |
 
-### 3. Crear un administrador *(opcional)*
+**Si usas pgAdmin** (no soporta `\gexec` / `\c` de psql):
+
+1. Ejecuta solo: `CREATE DATABASE gestor_finanzas;`
+2. Conéctate a esa base
+3. Ejecuta el resto del archivo a partir de `CREATE TABLE IF NOT EXISTS usuarios`
+
+> **Nota:** Si ya tenías una versión anterior de la BD (sin `categorias` / `metas`, o con columna `categoria` en texto), elimínala y vuelve a ejecutar el script, o adapta el esquema manualmente.
+
+### 2. Crear un administrador *(opcional)*
 
 Tras registrarte desde la app, promueve tu cuenta en la base de datos:
 
@@ -306,6 +340,8 @@ Si existe la carpeta `.vscode/`, puedes usar **Terminal → Run Task…** y eleg
 | `/register` | Público | Registro de usuario |
 | `/` | Privado | Dashboard con estadísticas |
 | `/transaccion` | Privado | Listado y gestión de movimientos |
+| `/categorias` | Privado | Gestión de categorías |
+| `/metas` | Privado | Gestión de metas de ahorro |
 | `/perfil` | Privado | Editar datos del usuario |
 | `/admin` | Admin | Gestión de usuarios y sesiones |
 
@@ -381,7 +417,7 @@ Todas requieren el header: `Authorization: Bearer <accessToken>`
 | PUT | `/:id` | Actualizar transacción |
 | DELETE | `/:id` | Eliminar transacción |
 
-**Filtros disponibles en GET `/api/transaccion`:** `tipo`, `categoria`, `desde`, `hasta`
+**Filtros disponibles en GET `/api/transaccion`:** `tipo`, `categoria` (ID de categoría), `desde`, `hasta`
 
 #### Crear transacción `POST /api/transaccion`
 
@@ -390,7 +426,7 @@ Todas requieren el header: `Authorization: Bearer <accessToken>`
   "tipo": "gasto",
   "importe": 45.50,
   "descripcion": "Supermercado",
-  "categoria": "Alimentación",
+  "categoria_id": 1,
   "fecha": "2026-06-21T10:00:00.000Z"
 }
 ```
@@ -401,8 +437,52 @@ Todas requieren el header: `Authorization: Bearer <accessToken>`
 |-------|------|-----|
 | `tipo` | Obligatorio (`"ingreso"` o `"gasto"`) | Opcional, mismo enum |
 | `importe` | Obligatorio, número > 0 | Opcional, número > 0 |
+| `categoria_id` | Obligatorio, ID de categoría del usuario | Opcional, ID válido |
 | `fecha` | Opcional, formato ISO válido | Opcional, formato ISO válido |
 | Body vacío | — | Rechazado |
+
+---
+
+### Categorías — `/api/categorias`
+
+Todas requieren el header: `Authorization: Bearer <accessToken>`
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/` | Listar categorías del usuario |
+| GET | `/:id` | Obtener una categoría |
+| POST | `/` | Crear categoría (`nombre`) |
+| PUT | `/:id` | Renombrar categoría |
+| DELETE | `/:id` | Eliminar (solo si no tiene transacciones) |
+
+---
+
+### Metas — `/api/metas`
+
+Todas requieren el header: `Authorization: Bearer <accessToken>`
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/` | Listar metas del usuario |
+| GET | `/:id` | Obtener una meta |
+| POST | `/` | Crear meta |
+| PUT | `/:id` | Actualizar meta |
+| DELETE | `/:id` | Eliminar meta |
+
+#### Crear meta `POST /api/metas`
+
+```json
+{
+  "nombre": "Viaje",
+  "descripcion": "Ahorro para vacaciones",
+  "monto_objetivo": 500000,
+  "monto_actual": 50000,
+  "fecha_limite": "2026-12-31",
+  "estado": "activa"
+}
+```
+
+`estado` puede ser `"activa"`, `"completada"` o `"cancelada"`. Si `monto_actual >= monto_objetivo`, el backend marca la meta como `completada`.
 
 ---
 
@@ -482,10 +562,10 @@ Login
 - Si la app no te saca al login, puedes ignorarlos con seguridad
 
 ### `psql` no reconocido en PowerShell
-- Añade PostgreSQL al PATH de Windows, o usa pgAdmin para ejecutar `schema.sql`
+- Añade PostgreSQL al PATH de Windows, o usa pgAdmin Query Tool: abre `backend/database/schema.sql` y ejecútalo conectado a la BD `postgres`
 
 ---
 
 ## Licencia
 
-[ISC](./LICENSE)
+ISC
