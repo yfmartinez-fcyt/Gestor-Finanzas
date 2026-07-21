@@ -12,6 +12,7 @@ const transaccionRoutes = require("./routes/transaccionRoutes");
 const usuarioRoutes = require("./routes/usuarioRoutes");
 const categoriasRoutes = require("./routes/categoriasRoutes");
 const metasRoutes = require("./routes/metasRoutes");
+const movimientosMetaRoutes = require('./routes/movimientosMetaRoutes');
 
 
 const errorHandler = require('./middleware/errorHandler');
@@ -74,6 +75,7 @@ app.use('/api/usuarios', usuarioRoutes);
 app.use("/api/transaccion", transaccionRoutes);
 app.use("/api/categorias", categoriasRoutes);
 app.use("/api/metas", metasRoutes);
+app.use('/api/movimientos-meta', movimientosMetaRoutes);
 
 
 // 404 handler

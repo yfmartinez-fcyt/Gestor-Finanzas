@@ -13,9 +13,10 @@ export default function Metas() {
   const [saving, setSaving] = useState(false);
 
   const cargarMetas = async () => {
-    try {
-      setError('');
+    setLoading(true);
+    setError('');
 
+    try {
       const response = await metasApi.list();
       setMetas(response.data || []);
 
@@ -35,7 +36,9 @@ export default function Metas() {
   const guardarMeta = async (datos) => {
     setError("");
     setSaving(true);
+
     try {
+
       if (metaSeleccionada) {
         await metasApi.update(metaSeleccionada.id, datos);
       } else {
@@ -44,10 +47,13 @@ export default function Metas() {
 
       setMostrarFormulario(false);
       setMetaSeleccionada(null);
-      cargarMetas();
+
+      await cargarMetas();
+
     } catch (error) {
       console.error(error);
       setError(error.message || 'Error al guardar la meta');
+
     } finally {
       setSaving(false);
     }
@@ -59,7 +65,7 @@ export default function Metas() {
 
     try {
       await metasApi.remove(id);
-      cargarMetas();
+      await cargarMetas();
     } catch (error) {
       console.error(error);
       setError(error.message || 'Error al eliminar la meta');
@@ -104,19 +110,7 @@ export default function Metas() {
           </h2>
 
           <MetaForm
-            initial={
-              metaSeleccionada
-                ? {
-                  nombre: metaSeleccionada.nombre || "",
-                  descripcion: metaSeleccionada.descripcion || "",
-                  monto_objetivo: metaSeleccionada.monto_objetivo || "",
-                  monto_actual: metaSeleccionada.monto_actual || 0,
-                  fecha_limite: metaSeleccionada.fecha_limite
-                    ? metaSeleccionada.fecha_limite.split("T")[0]
-                    : "",
-                }
-                : undefined
-            }
+            initial={metaSeleccionada}
             onSubmit={guardarMeta}
             onCancel={() => {
               setMostrarFormulario(false);
@@ -127,23 +121,27 @@ export default function Metas() {
         </section>
       )}
 
-      {metas.length === 0 ? (
-        <p>No existen metas registradas.</p>
-      ) : (
-        <div className="cards-grid">
-          {metas.map((meta) => (
-            <MetaCard
-              key={meta.id}
-              meta={meta}
-              onEdit={() => {
-                setMetaSeleccionada(meta);
-                setMostrarFormulario(true);
-              }}
-              onDelete={() => eliminarMeta(meta.id)}
-            />
-          ))}
-        </div>
-      )}
+      <section className="panel">
+        {metas.length === 0 ? (
+          <div className="empty-state">
+            <p>No tienes metas registradas.</p>
+          </div>
+        ) : (
+          <div className="cards-grid">
+            {metas.map((meta) => (
+              <MetaCard
+                key={meta.id}
+                meta={meta}
+                onEdit={() => {
+                  setMetaSeleccionada(meta);
+                  setMostrarFormulario(true);
+                }}
+                onDelete={() => eliminarMeta(meta.id)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
 
     </div>
   );

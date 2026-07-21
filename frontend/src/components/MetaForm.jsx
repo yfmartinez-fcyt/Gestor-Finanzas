@@ -4,7 +4,6 @@ const EMPTY_FORM = {
   nombre: "",
   descripcion: "",
   monto_objetivo: "",
-  monto_actual: 0,
   fecha_limite: new Date().toISOString().slice(0, 10),
 };
 
@@ -31,8 +30,7 @@ export default function MetaForm({ initial, onSubmit, onCancel, loading }) {
 
     onSubmit({
       ...form,
-      monto_objetivo: Number(form.monto_objetivo),
-      monto_actual: Number(form.monto_actual),
+      monto_objetivo: Number(form.monto_objetivo)
     });
   };
 
@@ -78,31 +76,17 @@ export default function MetaForm({ initial, onSubmit, onCancel, loading }) {
           />
         </label>
 
-
         <label>
-          Monto actual
+          Fecha límite
           <input
-            type="number"
-            name="monto_actual"
-            min="0"
-            value={form.monto_actual}
+            type="date"
+            name="fecha_limite"
+            value={form.fecha_limite}
             onChange={handleChange}
           />
         </label>
 
       </div>
-
-
-      <label>
-        Fecha límite
-        <input
-          type="date"
-          name="fecha_limite"
-          value={form.fecha_limite}
-          onChange={handleChange}
-        />
-      </label>
-
 
       <div className="form-actions">
 

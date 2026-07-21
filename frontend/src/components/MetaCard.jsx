@@ -1,23 +1,24 @@
-export default function MetaCard({ meta, onEdit, onDelete }) {
-  const porcentaje = Math.min(
-    100,
-    Math.round((Number(meta.monto_actual) / Number(meta.monto_objetivo)) * 100)
-  );
+import { formatDate } from "../utils/format";
 
-  const restante = Math.max(
-    0,
-    Number(meta.monto_objetivo) - Number(meta.monto_actual)
-  );
+export default function MetaCard({ meta, onEdit, onDelete }) {
 
   const formatearMoneda = (valor) =>
-    Number(valor).toLocaleString("es-PY");
+    Number(valor || 0).toLocaleString("es-PY");
+
+  const estados = {
+    activa: "Activa",
+    completada: "Completada",
+    cancelada: "Cancelada",
+  };
+
+  const estadoTexto = estados[meta.estado] || meta.estado;
 
   return (
     <div className="meta-card">
       <div className="meta-header">
         <h3>{meta.nombre}</h3>
         <span className={`estado ${meta.estado}`}>
-          {meta.estado}
+          {estadoTexto}
         </span>
       </div>
 
@@ -25,36 +26,15 @@ export default function MetaCard({ meta, onEdit, onDelete }) {
         <p className="descripcion">{meta.descripcion}</p>
       )}
 
-      <div className="progress">
-        <div
-          className="progress-bar"
-          style={{ width: `${porcentaje}%` }}
-        ></div>
-      </div>
-
-      <p>
-        <strong>{porcentaje}% completado</strong>
-      </p>
-
-      <p>
-        <strong>Ahorrado:</strong> Gs.{" "}
-        {formatearMoneda(meta.monto_actual)}
-      </p>
-
       <p>
         <strong>Objetivo:</strong> Gs.{" "}
         {formatearMoneda(meta.monto_objetivo)}
       </p>
 
-      <p>
-        <strong>Faltan:</strong> Gs.{" "}
-        {formatearMoneda(restante)}
-      </p>
-
       {meta.fecha_limite && (
         <p>
           <strong>Fecha límite:</strong>{" "}
-          {new Date(meta.fecha_limite).toLocaleDateString()}
+          {formatDate(meta.fecha_limite)}
         </p>
       )}
 

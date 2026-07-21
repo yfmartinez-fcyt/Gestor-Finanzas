@@ -95,22 +95,22 @@ const validateCreateTransaccion = (body) => {
   }
 
   if (!isValidId(categoria_id)) {
-  return {
-    valid: false,
-    message: 'Debe seleccionar una categoría válida',
-  };
-}
+    return {
+      valid: false,
+      message: 'Debe seleccionar una categoría válida',
+    };
+  }
 
- return {
-  valid: true,
-  data: {
-    tipo,
-    importe: importeParsed,
-    descripcion: descripcion?.trim() || null,
-    categoria_id: Number(categoria_id),
-    fecha: fecha || new Date(),
-  },
-};
+  return {
+    valid: true,
+    data: {
+      tipo,
+      importe: importeParsed,
+      descripcion: descripcion?.trim() || null,
+      categoria_id: Number(categoria_id),
+      fecha: fecha || new Date(),
+    },
+  };
 };
 
 /**
@@ -146,11 +146,11 @@ const validateUpdateTransaccion = (body) => {
   }
 
   if (categoria_id !== undefined && !isValidId(categoria_id)) {
-  return {
-    valid: false,
-    message: 'Debe seleccionar una categoría válida'
-  };
-}
+    return {
+      valid: false,
+      message: 'Debe seleccionar una categoría válida'
+    };
+  }
 
   return { valid: true };
 };
@@ -276,9 +276,7 @@ const validateCreateMeta = (body) => {
     nombre,
     descripcion,
     monto_objetivo,
-    monto_actual,
     fecha_limite,
-    estado,
   } = body;
 
   if (!nombre?.trim()) {
@@ -301,9 +299,7 @@ const validateCreateMeta = (body) => {
       nombre: nombre.trim(),
       descripcion: descripcion?.trim() || null,
       monto_objetivo: Number(monto_objetivo),
-      monto_actual: Number(monto_actual) || 0,
-      fecha_limite: fecha_limite || null,
-      estado: estado || "activa",
+      fecha_limite: fecha_limite?.trim() || null
     },
   };
 };
@@ -313,7 +309,6 @@ const validateUpdateMeta = (body) => {
     nombre,
     descripcion,
     monto_objetivo,
-    monto_actual,
     fecha_limite,
     estado,
   } = body;
@@ -322,7 +317,6 @@ const validateUpdateMeta = (body) => {
     nombre,
     descripcion,
     monto_objetivo,
-    monto_actual,
     fecha_limite,
     estado,
   ];
@@ -356,16 +350,6 @@ const validateUpdateMeta = (body) => {
   }
 
   if (
-    monto_actual !== undefined &&
-    (isNaN(Number(monto_actual)) || Number(monto_actual) < 0)
-  ) {
-    return {
-      valid: false,
-      message: "El monto actual no es válido",
-    };
-  }
-
-  if (
     fecha_limite !== undefined &&
     fecha_limite !== null &&
     fecha_limite !== "" &&
@@ -390,6 +374,113 @@ const validateUpdateMeta = (body) => {
   return { valid: true };
 };
 
+const validateCreateMovimientoMeta = (body) => {
+  const {
+    meta_id,
+    tipo,
+    monto,
+    descripcion,
+  } = body;
+
+  if (!isValidId(meta_id)) {
+    return {
+      valid: false,
+      message: "Debe seleccionar una meta válida",
+    };
+  }
+
+  if (!["aporte", "retiro"].includes(tipo)) {
+    return {
+      valid: false,
+      message: 'El tipo debe ser "aporte" o "retiro"',
+    };
+  }
+
+  if (parseImporte(monto) === null) {
+    return {
+      valid: false,
+      message: "El monto debe ser mayor a cero",
+    };
+  }
+
+  if (
+    descripcion !== undefined &&
+    descripcion !== null &&
+    typeof descripcion !== "string"
+  ) {
+    return {
+      valid: false,
+      message: "La descripción debe ser texto",
+    };
+  }
+
+  return {
+    valid: true,
+    data: {
+      meta_id: Number(meta_id),
+      tipo,
+      monto: parseImporte(monto),
+      descripcion: descripcion?.trim() || null,
+    },
+  };
+};
+
+const validateUpdateMovimientoMeta = (body) => {
+  const {
+    tipo,
+    monto,
+    descripcion,
+  } = body;
+
+  const fields = [tipo, monto, descripcion];
+
+  const hasField = fields.some(v => v !== undefined);
+
+  if (!hasField) {
+    return {
+      valid: false,
+      message: "Debe enviar al menos un campo para actualizar",
+    };
+  }
+
+  if (
+    tipo !== undefined &&
+    !["aporte", "retiro"].includes(tipo)
+  ) {
+    return {
+      valid: false,
+      message: 'El tipo debe ser "aporte" o "retiro"',
+    };
+  }
+
+  if (
+    monto !== undefined &&
+    parseImporte(monto) === null
+  ) {
+    return {
+      valid: false,
+      message: "El monto debe ser mayor a cero",
+    };
+  }
+
+  if (
+    descripcion !== undefined &&
+    descripcion !== null &&
+    typeof descripcion !== "string"
+  ) {
+    return {
+      valid: false,
+      message: "La descripción debe ser texto",
+    };
+  }
+
+  return {
+    valid: true,
+  };
+};
+
+
+
 module.exports = {
   isValidId,
   parseImporte,
@@ -403,4 +494,6 @@ module.exports = {
   validateTipoQuery,
   validateCreateMeta,
   validateUpdateMeta,
+  validateCreateMovimientoMeta,
+  validateUpdateMovimientoMeta,
 };

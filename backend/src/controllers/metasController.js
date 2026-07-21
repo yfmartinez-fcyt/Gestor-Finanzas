@@ -1,4 +1,4 @@
-const { pool } = require("../config/db");const {
+const { pool } = require("../config/db"); const {
   isValidId,
   validateCreateMeta,
   validateUpdateMeta,
@@ -9,17 +9,69 @@ const getAllMetas = async (req, res) => {
     const usuario_id = req.user.id;
 
     const result = await pool.query(
-      `SELECT *
-       FROM metas
-       WHERE usuario_id = $1
-       ORDER BY created_at DESC`,
+      `SELECT 
+                m.id,
+                m.nombre,
+                m.descripcion,
+                m.monto_objetivo,
+                m.fecha_limite,
+                m.created_at,
+
+                COALESCE(
+                    SUM(
+                        CASE
+                            WHEN mm.tipo = 'aporte' THEN mm.monto
+                            WHEN mm.tipo = 'retiro' THEN -mm.monto
+                        END
+                    ), 
+                    0
+                ) AS monto_actual
+
+            FROM metas m
+
+            LEFT JOIN movimientos_meta mm
+                ON m.id = mm.meta_id
+                AND mm.anulado = FALSE
+
+            WHERE m.usuario_id = $1
+
+            GROUP BY m.id
+
+            ORDER BY m.created_at DESC
+            `,
       [usuario_id]
     );
+
+    const metas = result.rows.map(meta => {
+
+      const montoActual = Number(meta.monto_actual);
+      const objetivo = Number(meta.monto_objetivo);
+
+
+      return {
+        ...meta,
+
+        monto_actual: montoActual,
+
+        porcentaje: objetivo > 0
+          ? Math.min(
+            Math.round((montoActual / objetivo) * 100),
+            100
+          )
+          : 0,
+
+        restante: Math.max(
+          objetivo - montoActual,
+          0
+        )
+      };
+
+    });
 
     res.json({
       success: true,
       message: "Metas obtenidas correctamente",
-      data: result.rows,
+      data: metas,
     });
   } catch (error) {
     console.error("Error al obtener metas:", error);
@@ -35,6 +87,7 @@ const getMetaById = async (req, res) => {
     const { id } = req.params;
     const usuario_id = req.user.id;
 
+
     if (!isValidId(id)) {
       return res.status(400).json({
         success: false,
@@ -43,10 +96,35 @@ const getMetaById = async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT *
-       FROM metas
-       WHERE id = $1
-       AND usuario_id = $2`,
+      `SELECT 
+          m.id,
+          m.nombre,
+          m.descripcion,
+          m.monto_objetivo,
+          m.fecha_limite,
+          m.created_at,
+
+          COALESCE(
+              SUM(
+                  CASE
+                      WHEN mm.tipo = 'aporte' THEN mm.monto
+                      WHEN mm.tipo = 'retiro' THEN -mm.monto
+                  END
+              ),
+              0
+          ) AS monto_actual
+
+      FROM metas m
+
+      LEFT JOIN movimientos_meta mm
+          ON m.id = mm.meta_id
+          AND mm.anulado = FALSE
+
+      WHERE m.id = $1
+      AND m.usuario_id = $2
+
+      GROUP BY m.id
+`,
       [id, usuario_id]
     );
 
@@ -57,11 +135,29 @@ const getMetaById = async (req, res) => {
       });
     }
 
+    const meta = result.rows[0];
+
+    const montoActual = Number(meta.monto_actual);
+    const objetivo = Number(meta.monto_objetivo);
+
     res.json({
       success: true,
-      message: "Meta obtenida correctamente",
-      data: result.rows[0],
+      data: {
+        ...meta,
+        monto_actual: montoActual,
+        porcentaje: objetivo > 0
+          ? Math.min(
+            Math.round((montoActual / objetivo) * 100),
+            100
+          )
+          : 0,
+        restante: Math.max(
+          objetivo - montoActual,
+          0
+        )
+      }
     });
+
   } catch (error) {
     console.error("Error al obtener meta:", error);
     res.status(500).json({
@@ -84,42 +180,30 @@ const createMeta = async (req, res) => {
 
     const usuario_id = req.user.id;
 
-    let {
+    const {
       nombre,
       descripcion,
       monto_objetivo,
-      monto_actual,
-      fecha_limite,
-      estado,
+      fecha_limite
     } = validation.data;
-
-    if (monto_actual >= monto_objetivo) {
-      estado = "completada";
-    } else {
-      estado = "activa";
-    }
 
     const result = await pool.query(
       `INSERT INTO metas
       (
-        usuario_id,
-        nombre,
-        descripcion,
-        monto_objetivo,
-        monto_actual,
-        fecha_limite,
-        estado
+      usuario_id,
+      nombre,
+      descripcion,
+      monto_objetivo,
+      fecha_limite
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7)
+      VALUES ($1,$2,$3,$4,$5)
       RETURNING *`,
       [
         usuario_id,
         nombre,
         descripcion,
         monto_objetivo,
-        monto_actual,
         fecha_limite,
-        estado,
       ]
     );
 
@@ -176,60 +260,34 @@ const updateMeta = async (req, res) => {
     const metaActual = existe.rows[0];
 
     const nombre =
-      req.body.nombre !== undefined ? req.body.nombre : metaActual.nombre;
+      validation.data.nombre ?? metaActual.nombre;
 
     const descripcion =
-      req.body.descripcion !== undefined
-        ? req.body.descripcion
-        : metaActual.descripcion;
+      validation.data.descripcion ?? metaActual.descripcion;
 
     const monto_objetivo =
-      req.body.monto_objetivo !== undefined
-        ? Number(req.body.monto_objetivo)
-        : Number(metaActual.monto_objetivo);
-
-    const monto_actual =
-      req.body.monto_actual !== undefined
-        ? Number(req.body.monto_actual)
-        : Number(metaActual.monto_actual);
+      validation.data.monto_objetivo ?? Number(metaActual.monto_objetivo);
 
     const fecha_limite =
-      req.body.fecha_limite !== undefined
-        ? req.body.fecha_limite
-        : metaActual.fecha_limite;
-
-    let estado =
-      req.body.estado !== undefined
-        ? req.body.estado
-        : metaActual.estado;
-
-    // Actualizar automáticamente el estado
-    if (monto_actual >= monto_objetivo) {
-      estado = "completada";
-    } else if (estado !== "cancelada") {
-      estado = "activa";
-    }
+      validation.data.fecha_limite ?? metaActual.fecha_limite;
 
     const result = await pool.query(
       `UPDATE metas
-       SET
-          nombre = $1,
-          descripcion = $2,
-          monto_objetivo = $3,
-          monto_actual = $4,
-          fecha_limite = $5,
-          estado = $6,
-          updated_at = CURRENT_TIMESTAMP
-       WHERE id = $7
+      SET
+        nombre=$1,
+        descripcion=$2,
+        monto_objetivo=$3,
+        fecha_limite=$4
+       WHERE id = $5 
+       AND usuario_id = $6
        RETURNING *`,
       [
         nombre,
         descripcion,
         monto_objetivo,
-        monto_actual,
         fecha_limite,
-        estado,
         id,
+        usuario_id
       ]
     );
 
@@ -249,7 +307,9 @@ const updateMeta = async (req, res) => {
 
 const deleteMeta = async (req, res) => {
   try {
+
     const { id } = req.params;
+    const { confirm } = req.query;
     const usuario_id = req.user.id;
 
     if (!isValidId(id)) {
@@ -259,29 +319,92 @@ const deleteMeta = async (req, res) => {
       });
     }
 
-    const result = await pool.query(
-      `DELETE FROM metas
-       WHERE id = $1
-       AND usuario_id = $2
-       RETURNING *`,
-      [id, usuario_id]
+    // Verificar que la meta existe y pertenece al usuario
+    const meta = await pool.query(
+      `
+      SELECT id, nombre
+      FROM metas
+      WHERE id = $1
+      AND usuario_id = $2
+      `,
+      [
+        id,
+        usuario_id
+      ]
     );
 
-    if (result.rows.length === 0) {
+    if (meta.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Meta no encontrada",
       });
     }
 
-    res.json({
+    // Obtener saldo actual de la meta
+    const saldo = await pool.query(
+      `
+      SELECT 
+        COALESCE(
+          SUM(
+            CASE
+              WHEN tipo = 'aporte' THEN monto
+              WHEN tipo = 'retiro' THEN -monto
+            END
+          ),
+          0
+        ) AS saldo
+      FROM movimientos_meta
+      WHERE meta_id = $1
+      AND usuario_id = $2
+      AND anulado = FALSE
+      `,
+      [
+        id,
+        usuario_id
+      ]
+    );
+
+    const saldoActual = Number(saldo.rows[0].saldo);
+
+    // Si tiene dinero reservado, pedir confirmación
+    if (saldoActual > 0 && confirm !== "true") {
+
+      return res.status(409).json({
+        success: false,
+        requiresConfirmation: true,
+        message:
+          "La meta tiene dinero reservado. Si la elimina, el saldo volverá a estar disponible.",
+        saldo_a_liberar: saldoActual
+      });
+
+    }
+
+    // Eliminar meta
+    // Los movimientos se eliminan automáticamente por ON DELETE CASCADE
+    const result = await pool.query(
+      `
+      DELETE FROM metas
+      WHERE id = $1
+      AND usuario_id = $2
+      RETURNING *
+      `,
+      [
+        id,
+        usuario_id
+      ]
+    );
+
+    return res.json({
       success: true,
       message: "Meta eliminada correctamente",
-      data: result.rows[0],
+      data: result.rows[0]
     });
+
   } catch (error) {
+
     console.error("Error al eliminar meta:", error);
-    res.status(500).json({
+
+    return res.status(500).json({
       success: false,
       message: "Error interno del servidor",
     });
