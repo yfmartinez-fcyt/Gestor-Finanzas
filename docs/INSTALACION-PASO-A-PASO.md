@@ -12,12 +12,20 @@ Guía para instalar y ejecutar el proyecto desde cero en **Windows**.
 
 ```
 Gestor-Finanzas/                    ← RAÍZ del proyecto
+├── .vscode/                        ← Tareas y depuración
+├── docs/                           ← Guías de instalación
 ├── backend/                        ← API (Node.js + Express)
 │   ├── database/
-│   │   └── schema.sql              ← Script de tablas
+│   │   └── schema.sql              ← Crea la BD y las tablas
+│   ├── src/
+│   │   ├── controllers/            ← auth, categorías, metas, transacciones, usuarios
+│   │   └── routes/
 │   ├── .env.example
 │   └── package.json
 ├── frontend/                       ← Interfaz web (React + Vite)
+│   ├── src/
+│   │   ├── pages/                  ← Dashboard, Categorias, Metas, Transaccion...
+│   │   └── context/                ← Auth + Theme
 │   ├── .env.example
 │   └── package.json
 └── README.md
@@ -54,7 +62,7 @@ Debes ver números de versión, por ejemplo `v20.x.x` y `10.x.x`.
 
 ## Paso 2 — Instalar PostgreSQL y pgAdmin
 
-**Para qué sirve:** guardar usuarios, sesiones y transacciones.
+**Para qué sirve:** guardar usuarios, sesiones, categorías, transacciones y metas.
 
 1. Descarga desde https://www.postgresql.org/download/windows/
 2. Ejecuta el instalador
@@ -140,67 +148,59 @@ Espera a que termine cada `npm install` sin errores.
 
 ---
 
-## Paso 6 — Crear la base de datos
+## Paso 6 — Crear la base de datos y las tablas
 
-### Opción A — pgAdmin (recomendada)
-
-1. Abre **pgAdmin 4**
-2. En el panel izquierdo: **Servers → PostgreSQL**
-3. Clic derecho en **Databases** → **Create → Database…**
-4. En **Database:** escribe `gestor_finanzas`
-5. Clic en **Save**
-
-### Opción B — Terminal (si `psql` funciona)
-
-```powershell
-psql -U postgres -c "CREATE DATABASE gestor_finanzas;"
-```
-
-Te pedirá la contraseña de `postgres`.
-
----
-
-## Paso 7 — Ejecutar el esquema (crear tablas)
-
-El archivo con las tablas está en:
+El archivo está en:
 
 ```
 Gestor-Finanzas\backend\database\schema.sql
 ```
 
-Crea estas tablas:
+Crea la base `gestor_finanzas` (si no existe) y estas tablas:
 
-| Tabla            | Contenido                          |
-|------------------|------------------------------------|
-| `usuarios`       | Datos de usuario y rol             |
-| `refresh_tokens` | Sesiones activas (JWT refresh)     |
-| `transacciones`  | Ingresos y gastos                  |
+| Tabla            | Contenido                                      |
+|------------------|------------------------------------------------|
+| `usuarios`       | Datos de usuario y rol                         |
+| `refresh_tokens` | Sesiones activas (JWT refresh)                 |
+| `categorias`     | Categorías personalizadas por usuario          |
+| `transacciones`  | Ingresos y gastos (con `categoria_id`)          |
+| `metas`          | Metas de ahorro                                |
 
-### Opción A — pgAdmin (recomendada)
+### Opción A — Terminal con `psql` (recomendada)
 
-1. pgAdmin → **gestor_finanzas** → clic derecho → **Query Tool**
-2. Abre `backend\database\schema.sql` en VS Code
-3. Copia **todo** el contenido y pégalo en el Query Tool
-4. Pulsa **Execute** (F5)
-
-### Opción B — Terminal
+El script crea la BD y las tablas en un solo paso:
 
 ```powershell
 cd C:\Users\TU_USUARIO\Desktop\Gestor-Finanzas
-psql -U postgres -d gestor_finanzas -f backend\database\schema.sql
+psql -U postgres -f backend\database\schema.sql
 ```
+
+Te pedirá la contraseña de `postgres`.
+
+### Opción B — pgAdmin
+
+pgAdmin no entiende las meta-órdenes `\gexec` / `\c` de psql. Hazlo en dos pasos:
+
+1. Abre **pgAdmin 4** → **Servers → PostgreSQL**
+2. Clic derecho en **Databases** → **Create → Database…** → nombre: `gestor_finanzas` → **Save**
+3. Clic derecho en **gestor_finanzas** → **Query Tool**
+4. Abre `backend\database\schema.sql` en VS Code
+5. Copia solo desde `CREATE TABLE IF NOT EXISTS usuarios` hasta el final (omite las líneas con `\gexec` y `\c`)
+6. Pégalo en el Query Tool y pulsa **Execute** (F5)
 
 ### Comprobar que se creó bien
 
 En pgAdmin: **gestor_finanzas → Schemas → public → Tables**
 
-Debes ver: `usuarios`, `refresh_tokens`, `transacciones`.
+Debes ver: `usuarios`, `refresh_tokens`, `categorias`, `transacciones`, `metas`.
+
+> Si ya tenías una BD antigua (sin categorías/metas), elimínala y vuelve a ejecutar el script.
 
 ---
 
-## Paso 8 — Configurar variables de entorno
+## Paso 7 — Configurar variables de entorno
 
-### 8.1 Backend
+### 7.1 Backend
 
 ```powershell
 cd C:\Users\TU_USUARIO\Desktop\Gestor-Finanzas\backend
@@ -233,7 +233,7 @@ JWT_REFRESH_EXPIRES=1h
 | `JWT_ACCESS_SECRET`   | Texto largo y aleatorio (no compartir)         |
 | `JWT_REFRESH_SECRET`  | Otro texto largo y aleatorio, distinto al anterior |
 
-### 8.2 Frontend
+### 7.2 Frontend
 
 ```powershell
 cd C:\Users\TU_USUARIO\Desktop\Gestor-Finanzas\frontend
@@ -250,7 +250,7 @@ VITE_API_URL=
 
 ---
 
-## Paso 9 — Iniciar la aplicación
+## Paso 8 — Iniciar la aplicación
 
 Necesitas **dos terminales abiertas** a la vez. En VS Code: **Terminal → Split Terminal**.
 
@@ -286,14 +286,15 @@ Local: http://localhost:5173/
 
 ---
 
-## Paso 10 — Comprobar que todo funciona
+## Paso 9 — Comprobar que todo funciona
 
 | # | Dónde | Qué hacer | Resultado esperado |
 |---|-------|-----------|-------------------|
 | 1 | Navegador | Abrir http://localhost:4000/api/health | JSON con `"status": "online"` |
 | 2 | Navegador | Abrir http://localhost:5173 | Pantalla de login o registro |
 | 3 | App | Registrarte con un email y contraseña | Cuenta creada |
-| 4 | App | Crear una transacción de prueba | Aparece en el listado |
+| 4 | App | Crear una categoría y una transacción | Aparecen en el listado |
+| 5 | App | Crear una meta de ahorro | Aparece en `/metas` |
 
 ### Crear un usuario administrador (opcional)
 
@@ -317,19 +318,18 @@ npm install
 cd ..\frontend
 npm install
 
-# Paso 6-7 — Base de datos (terminal; o usa pgAdmin)
+# Paso 6 — Base de datos (crea BD + tablas; o usa pgAdmin)
 cd C:\Users\TU_USUARIO\Desktop\Gestor-Finanzas
-psql -U postgres -c "CREATE DATABASE gestor_finanzas;"
-psql -U postgres -d gestor_finanzas -f backend\database\schema.sql
+psql -U postgres -f backend\database\schema.sql
 
-# Paso 8 — Variables de entorno
+# Paso 7 — Variables de entorno
 cd backend
 copy .env.example .env
 # Editar backend\.env con VS Code
 cd ..\frontend
 copy .env.example .env
 
-# Paso 9 — Arrancar (DOS terminales)
+# Paso 8 — Arrancar (DOS terminales)
 # Terminal 1:
 cd C:\Users\TU_USUARIO\Desktop\Gestor-Finanzas\backend
 npm run dev
@@ -356,7 +356,7 @@ npm run dev
 
 ### `psql` no se reconoce
 
-- Usa **pgAdmin** para los Pasos 6 y 7
+- Usa **pgAdmin** para el Paso 6 (crear BD + tablas)
 - O añade al PATH: `C:\Program Files\PostgreSQL\16\bin` (ajusta la versión)
 
 ### `npm install` falla
@@ -391,8 +391,7 @@ Ejecuta el comando en la misma carpeta donde falló (`backend\` o `frontend\`).
 | `npm install`                  | `backend\` o `frontend\`    | Terminal           |
 | `copy .env.example .env`       | `backend\` o `frontend\`    | Terminal           |
 | Editar `.env`                  | `backend\` o `frontend\`    | VS Code            |
-| `CREATE DATABASE ...`          | —                           | pgAdmin o `psql`   |
-| Ejecutar `schema.sql`          | RAÍZ o pgAdmin              | Terminal o pgAdmin |
+| `CREATE DATABASE` + tablas     | RAÍZ o pgAdmin              | `psql -f schema.sql` o pgAdmin |
 | `npm run dev`                  | `backend\` (terminal 1)     | Terminal           |
 | `npm run dev`                  | `frontend\` (terminal 2)   | Terminal           |
 | Probar la app                  | —                           | Navegador          |
@@ -401,9 +400,9 @@ Ejecuta el comando en la misma carpeta donde falló (`backend\` o `frontend\`).
 
 ## Documentación relacionada
 
-- [README.md](./README.md) — Descripción general, API y rutas
+- [README.md](../README.md) — Descripción general, API y rutas
 - [INSTALACION-NUEVA-PC.md](./INSTALACION-NUEVA-PC.md) — Guía ampliada con migración de datos y anexo SQL
-- [backend/database/schema.sql](./backend/database/schema.sql) — Esquema de la base de datos
+- [backend/database/schema.sql](../backend/database/schema.sql) — Esquema de la base de datos
 
 ---
 

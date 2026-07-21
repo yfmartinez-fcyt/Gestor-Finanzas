@@ -1,16 +1,10 @@
 -- Esquema inicial para Gestor Finanzas
--- Ejecutar conectado a la BD por defecto 'postgres':
---   psql -U postgres -f backend/database/schema.sql
---
--- Este script crea la base de datos (si no existe) y todas las tablas.
 
--- 1. Crear la base de datos (solo si aún no existe; requiere psql)
 SELECT 'CREATE DATABASE gestor_finanzas'
 WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'gestor_finanzas')\gexec
 
 \c gestor_finanzas
 
--- 2. Tablas
 
 CREATE TABLE IF NOT EXISTS usuarios (
     id SERIAL PRIMARY KEY,
@@ -66,7 +60,6 @@ CREATE TABLE IF NOT EXISTS metas (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. Índices
 
 CREATE INDEX IF NOT EXISTS idx_transacciones_usuario ON transacciones(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_transacciones_fecha ON transacciones(fecha);

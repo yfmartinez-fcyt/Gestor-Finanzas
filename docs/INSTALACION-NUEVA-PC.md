@@ -11,8 +11,10 @@ Antes de empezar, ubica estas rutas en tu PC (ajusta `TU_USUARIO`):
 ```
 C:\Users\TU_USUARIO\Desktop\Gestor-Finanzas\     ← RAÍZ del proyecto
 ├── backend\                                      ← comandos del servidor API
+│   └── database\schema.sql                       ← crea la BD y las tablas
 ├── frontend\                                     ← comandos de la interfaz web
-└── backend\database\schema.sql                   ← script de la base de datos
+├── docs\                                         ← guías de instalación
+└── README.md
 ```
 
 En esta guía usamos **RAÍZ** para referirnos a `Gestor-Finanzas\`, **backend/** y **frontend/**.
@@ -126,13 +128,14 @@ Si `psql` no se reconoce, usa **pgAdmin** o añade al PATH: `C:\Program Files\Po
 Gestor-Finanzas\          ← toda esta carpeta (sin node_modules)
 ├── backend\
 │   └── database\
-│       └── schema.sql    ← IMPORTANTE: script de la base de datos
+│       └── schema.sql    ← IMPORTANTE: crea la BD y las tablas
 ├── frontend\
+├── docs\
 ├── .vscode\
 └── README.md
 ```
 
-> **Si no ves `backend\database\schema.sql`**, créalo tú (ver [Paso 4.2](#42-ejecutar-el-esquema-crear-tablas)). Ese archivo puede faltar si el proyecto se copió sin todos los archivos o aún no está en el repositorio Git.
+> **Si no ves `backend\database\schema.sql`**, créalo tú (ver [Anexo: schema.sql](#anexo-contenido-de-schemasql)). Ese archivo puede faltar si el proyecto se copió sin todos los archivos.
 
 ### No copiar
 
@@ -209,46 +212,28 @@ npm install
 
 ### Paso 4 — Configurar PostgreSQL
 
-**4.1 Crear la base de datos**
+**4.1 Crear la base de datos y las tablas**
 
-| Dónde ejecutar | Qué hacer |
-|----------------|-----------|
-| **pgAdmin** (Query Tool) **o** terminal con `psql` — **no importa la carpeta del proyecto** | SQL abajo |
+El script `backend\database\schema.sql` crea la BD `gestor_finanzas` (si no existe) y las tablas:
 
-```sql
-CREATE DATABASE gestor_finanzas;
-```
-
-**Alternativa en terminal:**
-
-| Dónde ejecutar | Comando |
-|----------------|---------|
-| Cualquier terminal (con `psql` en PATH) | ver abajo |
-
-```powershell
-psql -U postgres -c "CREATE DATABASE gestor_finanzas;"
-```
-
-**4.2 Ejecutar el esquema (crear tablas)**
-
-El script debe estar en:
-
-```
-Gestor-Finanzas\backend\database\schema.sql
-```
+| Tabla | Contenido |
+|-------|-----------|
+| `usuarios` | Datos de usuario y rol |
+| `refresh_tokens` | Sesiones activas |
+| `categorias` | Categorías por usuario |
+| `transacciones` | Ingresos y gastos (`categoria_id`) |
+| `metas` | Metas de ahorro |
 
 **Si el archivo NO existe**, créalo:
 
 | Dónde | Qué hacer |
 |-------|-----------|
 | **`Gestor-Finanzas\backend\`** | Crear carpeta `database` si no existe |
-| **`Gestor-Finanzas\backend\database\`** | Crear archivo `schema.sql` con el SQL de la sección [Anexo: schema.sql](#anexo-contenido-de-schemasql) |
-
-En VS Code: clic derecho en `backend` → New Folder → `database` → New File → `schema.sql` → pegar el SQL del anexo.
+| **`Gestor-Finanzas\backend\database\`** | Crear `schema.sql` con el SQL del [Anexo](#anexo-contenido-de-schemasql) |
 
 ---
 
-**Opción A — Terminal (si tienes el archivo `schema.sql`)**
+**Opción A — Terminal con `psql` (un solo comando)**
 
 | Dónde ejecutar | Comando |
 |----------------|---------|
@@ -256,14 +241,16 @@ En VS Code: clic derecho en `backend` → New Folder → `database` → New File
 
 ```powershell
 cd C:\Users\TU_USUARIO\Desktop\Gestor-Finanzas
-psql -U postgres -d gestor_finanzas -f backend\database\schema.sql
+psql -U postgres -f backend\database\schema.sql
 ```
 
-**Opción B — pgAdmin (recomendado si no tienes el archivo o `psql` no funciona)**
+**Opción B — pgAdmin**
 
-| Dónde | Qué hacer |
-|-------|-----------|
-| **pgAdmin** → BD `gestor_finanzas` → **Query Tool** | Pegar el SQL del [Anexo](#anexo-contenido-de-schemasql) → **Execute (F5)** |
+pgAdmin no soporta `\gexec` / `\c`. Hazlo así:
+
+1. Query Tool sobre la BD `postgres` → ejecuta: `CREATE DATABASE gestor_finanzas;`
+2. Conéctate a `gestor_finanzas` → Query Tool
+3. Pega el SQL del [Anexo](#anexo-contenido-de-schemasql) (solo las tablas) → **Execute (F5)**
 
 ---
 
@@ -379,8 +366,7 @@ Debe aparecer: `Local: http://localhost:5173/`
 | `copy .env.example .env` | `backend\` | Terminal |
 | `copy .env.example .env` | `frontend\` | Terminal |
 | Editar `.env` | `backend\` o `frontend\` | VS Code / bloc de notas |
-| `CREATE DATABASE ...` | — | pgAdmin o `psql` |
-| `psql ... -f backend\database\schema.sql` | **RAÍZ** `Gestor-Finanzas\` | PowerShell |
+| `psql -f backend\database\schema.sql` | **RAÍZ** `Gestor-Finanzas\` | PowerShell (crea BD + tablas) |
 | `npm run dev` | `backend\` | Terminal 1 (dejar abierta) |
 | `npm run dev` | `frontend\` | Terminal 2 (dejar abierta) |
 | Probar la app | — | Navegador → `localhost:5173` |
@@ -469,10 +455,9 @@ cd C:\Users\TU_USUARIO\Desktop\Gestor-Finanzas\frontend
 npm install
 
 # ── PASO 4: Base de datos ─────────────────────────────────────
-# Terminal → ir a RAÍZ
+# Terminal → ir a RAÍZ (crea BD + tablas en un solo paso)
 cd C:\Users\TU_USUARIO\Desktop\Gestor-Finanzas
-psql -U postgres -c "CREATE DATABASE gestor_finanzas;"
-psql -U postgres -d gestor_finanzas -f backend\database\schema.sql
+psql -U postgres -f backend\database\schema.sql
 
 # ── PASO 5: Variables de entorno ───────────────────────────────
 # Terminal → backend
@@ -502,19 +487,22 @@ npm run dev
 
 ## 10. Documentación relacionada
 
-- [README.md](./README.md) — Documentación general del proyecto
-- [backend/.env.example](./backend/.env.example) — Variables del servidor
-- [frontend/.env.example](./frontend/.env.example) — Variables del frontend
-- [backend/database/schema.sql](./backend/database/schema.sql) — Esquema de la base de datos (ruta en el proyecto)
+- [README.md](../README.md) — Documentación general del proyecto
+- [INSTALACION-PASO-A-PASO.md](./INSTALACION-PASO-A-PASO.md) — Guía paso a paso
+- [backend/.env.example](../backend/.env.example) — Variables del servidor
+- [frontend/.env.example](../frontend/.env.example) — Variables del frontend
+- [backend/database/schema.sql](../backend/database/schema.sql) — Esquema de la base de datos
 
 ---
 
 ## Anexo: contenido de schema.sql
 
-Si no tienes el archivo, créalo en `backend\database\schema.sql` o ejecuta este SQL directamente en pgAdmin (con la BD `gestor_finanzas` seleccionada):
+Si no tienes el archivo, créalo en `backend\database\schema.sql` o ejecuta este SQL en pgAdmin **después** de crear la BD `gestor_finanzas` y estar conectado a ella.
+
+> Para `psql`, usa el archivo completo del repo (incluye la creación de la BD). El bloque de abajo es solo las tablas (apto para pgAdmin).
 
 ```sql
--- Esquema inicial para Gestor Finanzas
+-- Tablas para Gestor Finanzas (ejecutar sobre la BD gestor_finanzas)
 
 CREATE TABLE IF NOT EXISTS usuarios (
     id SERIAL PRIMARY KEY,
@@ -535,22 +523,49 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS categorias (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_categorias_usuario_nombre
+    ON categorias (usuario_id, LOWER(nombre));
+
 CREATE TABLE IF NOT EXISTS transacciones (
     id SERIAL PRIMARY KEY,
     usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
     tipo VARCHAR(20) NOT NULL CHECK (tipo IN ('ingreso', 'gasto')),
     importe NUMERIC(12, 2) NOT NULL CHECK (importe > 0),
     descripcion TEXT,
-    categoria VARCHAR(100),
+    categoria_id INTEGER REFERENCES categorias(id) ON DELETE RESTRICT,
     fecha TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS metas (
+    id SERIAL PRIMARY KEY,
+    usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    nombre VARCHAR(150) NOT NULL,
+    descripcion TEXT,
+    monto_objetivo NUMERIC(12, 2) NOT NULL CHECK (monto_objetivo > 0),
+    monto_actual NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (monto_actual >= 0),
+    fecha_limite DATE,
+    estado VARCHAR(20) NOT NULL DEFAULT 'activa'
+        CHECK (estado IN ('activa', 'completada', 'cancelada')),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS idx_transacciones_usuario ON transacciones(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_transacciones_fecha ON transacciones(fecha);
+CREATE INDEX IF NOT EXISTS idx_transacciones_categoria ON transacciones(categoria_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_usuario ON refresh_tokens(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_categorias_usuario ON categorias(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_metas_usuario ON metas(usuario_id);
 ```
 
 ---
 
-*Última actualización: junio 2026*
+*Última actualización: julio 2026*
