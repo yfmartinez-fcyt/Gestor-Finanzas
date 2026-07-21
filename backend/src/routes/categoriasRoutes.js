@@ -11,20 +11,15 @@ const {
     eliminarCategoria
 } = require('../controllers/categoriasController');
 
-
 router.use(authMiddleware);
-
-
 
 router.route('/')
     .get(obtenerCategorias)
     .post(crearCategoria);
 
-
 router.route('/:id')
     .get(obtenerCategoriaPorId)
     .put(editarCategoria)
     .delete(eliminarCategoria);
-
 
 module.exports = router;
