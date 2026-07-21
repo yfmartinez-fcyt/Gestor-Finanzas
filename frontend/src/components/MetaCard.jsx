@@ -4,8 +4,10 @@ import {
   CircleDollarSign,
   Calendar
 } from "lucide-react";
+import { useState } from "react";
 
 export default function MetaCard({ meta, onEdit, onDelete }) {
+  const [mostrarDetalle, setMostrarDetalle] = useState(false);
   const porcentaje = Math.min(
     100,
     Math.round((Number(meta.monto_actual) / Number(meta.monto_objetivo)) * 100)
@@ -20,7 +22,7 @@ export default function MetaCard({ meta, onEdit, onDelete }) {
     Number(valor).toLocaleString("es-PY");
 
   return (
-    <div className="meta-card">
+    <div className={`meta-card ${mostrarDetalle ? "modal-open" : ""}`}>
       <div className="meta-header">
         <h3>{meta.nombre}</h3>
         <span
@@ -31,7 +33,19 @@ export default function MetaCard({ meta, onEdit, onDelete }) {
       </div>
 
       {meta.descripcion && (
-        <p className="descripcion">{meta.descripcion}</p>
+        <p className="descripcion">
+          {meta.descripcion.length > 100
+            ? `${meta.descripcion.substring(0, 100)}...`
+            : meta.descripcion}
+        </p>
+      )}
+      {meta.descripcion && meta.descripcion.length > 100 && (
+        <button
+          className="btn-link"
+          onClick={() => setMostrarDetalle(true)}
+        >
+          Ver más...
+        </button>
       )}
 
       <div className="progress-bar meta-progress">
@@ -100,6 +114,30 @@ export default function MetaCard({ meta, onEdit, onDelete }) {
           Eliminar
         </button>
       </div>
+      {mostrarDetalle && (
+        <div className="modal-overlay">
+
+          <div className="modal-card">
+
+            <div className="modal-header">
+              <h2>{meta.nombre}</h2>
+            </div>
+
+            <p>
+              {meta.descripcion}
+            </p>
+
+            <button
+              className="btn btn-secondary"
+              onClick={() => setMostrarDetalle(false)}
+            >
+              Cerrar
+            </button>
+
+          </div>
+
+        </div>
+      )}
     </div>
   );
 }
