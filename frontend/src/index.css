@@ -111,19 +111,45 @@ select {
 .brand-icon {
   width: 42px;
   height: 42px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.12);
-  display: inline-flex;
+
+  display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
+
+  background: transparent;
+  border-radius: 0;
+
+  overflow: hidden;
+  padding: 2px;
 }
 
-.brand-icon-lg {
-  width: 56px;
-  height: 56px;
-  font-size: 1.1rem;
+.brand-icon-lg{
+  width:72px;
+  height:72px;
+
+  display:flex;
+  justify-content:center;
+    align-items:center;
+
+    margin:0 auto 14px;
+  padding:0;
+  background:transparent;
 }
+
+.logo{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+
+    border-radius:12px;
+    box-shadow:0 4px 12px rgba(0,0,0,.15);
+}
+
+.logo:hover{
+    transform:scale(1.05);
+}
+
+
 
 .nav {
   display: flex;

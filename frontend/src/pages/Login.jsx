@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import logo from "../assets/viru.png";
 
 export default function Login() {
   const { login } = useAuth();
@@ -33,7 +34,9 @@ export default function Login() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-header">
-          <span className="brand-icon brand-icon-lg">GF</span>
+          <div className="brand-icon brand-icon-lg">
+            <img src={logo} alt="Gestor Finanzas" className="logo" />
+          </div>
           <h1>Bienvenido de nuevo</h1>
           <p>Inicia sesión para gestionar tus finanzas.</p>
         </div>

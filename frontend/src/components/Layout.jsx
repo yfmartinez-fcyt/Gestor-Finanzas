@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from "../context/ThemeContext";
+import logo from "../assets/viru.png";
 
 export default function Layout() {
   const { user, logout } = useAuth();
@@ -30,7 +31,10 @@ export default function Layout() {
 
       <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
         <div className="brand">
-          <span className="brand-icon">GF</span>
+          <div className="brand-icon">
+            <img src={logo} alt="Gestor Finanzas" className="logo" />
+          </div>
+
           <div>
             <strong>Gestor Finanzas</strong>
             <small>Control personal</small>
