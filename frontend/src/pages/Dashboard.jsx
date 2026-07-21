@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { transaccionApi } from '../services/api';
 import { formatCurrency, formatDate } from '../utils/format';
@@ -59,7 +60,9 @@ export default function Dashboard() {
           <h1>Dashboard</h1>
           <p>Resumen de tu situación financiera.</p>
         </div>
-        <Link to="/transaccion" className="btn btn-primary">
+        <Link to="/transaccion" 
+        state={{ openForm: true }} 
+        className="btn btn-primary">
           + Nueva transacción
         </Link>
       </header>

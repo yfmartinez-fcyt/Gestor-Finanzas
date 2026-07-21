@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import TransactionForm from '../components/TransactionForm';
 import { transaccionApi, categoriasApi } from '../services/api';
 import { formatCurrency, formatDate, toInputDate } from '../utils/format';
 
 export default function Transaccion() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [filters, setFilters] = useState({
@@ -12,36 +15,38 @@ export default function Transaccion() {
     desde: '',
     hasta: '',
   });
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(
+    location.state?.openForm || false
+  );
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const loadItems = async () => {
-  setLoading(true);
-  setError("");
+    setLoading(true);
+    setError("");
 
-  try {
-    const data = await transaccionApi.list(filters);
-    setItems(data.data);
-  } catch (err) {
-    console.error("Error completo:", err);
+    try {
+      const data = await transaccionApi.list(filters);
+      setItems(data.data);
+    } catch (err) {
+      console.error("Error completo:", err);
 
-    if (err.response) {
-      console.error("Status:", err.response.status);
-      console.error("Respuesta:", err.response.data);
+      if (err.response) {
+        console.error("Status:", err.response.status);
+        console.error("Respuesta:", err.response.data);
+      }
+
+      setError(
+        err.response?.data?.message ||
+        err.message ||
+        "Error al obtener las transacciones"
+      );
+    } finally {
+      setLoading(false);
     }
-
-    setError(
-      err.response?.data?.message ||
-      err.message ||
-      "Error al obtener las transacciones"
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const loadCategorias = async () => {
     try {
@@ -59,6 +64,18 @@ export default function Transaccion() {
   useEffect(() => {
     loadCategorias();
   }, []);
+
+  useEffect(() => {
+    if (location.state?.openForm) {
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location, navigate]);
+
+  useEffect(() => {
+    if (location.state?.openForm) {
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
