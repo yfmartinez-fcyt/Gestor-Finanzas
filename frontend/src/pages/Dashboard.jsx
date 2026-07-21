@@ -40,6 +40,18 @@ export default function Dashboard() {
     );
   }
 
+  const metasDashboard = metas
+    .map(meta => ({
+      ...meta,
+      porcentaje: Math.min(
+        (Number(meta.monto_actual) / Number(meta.monto_objetivo)) * 100,
+        100
+      ),
+    }))
+    .filter(meta => meta.porcentaje < 100)
+    .sort((a, b) => b.porcentaje - a.porcentaje)
+    .slice(0, 3);
+
   return (
     <div className="page">
       <header className="page-header">
@@ -81,17 +93,14 @@ export default function Dashboard() {
           <Link to="/metas">Ver todas</Link>
         </div>
 
-        {metas.length === 0 ? (
+        {metasDashboard.length === 0 ? (
           <div className="empty-state">
             <p>No tienes metas registradas.</p>
           </div>
         ) : (
           <div className="metas-dashboard">
-            {metas.map((meta) => {
-              const porcentaje = Math.min(
-                (Number(meta.monto_actual) / Number(meta.monto_objetivo)) * 100,
-                100
-              );
+            {metasDashboard.map((meta) => {
+              const porcentaje = meta.porcentaje;
 
               const restante = Number(meta.monto_objetivo) - Number(meta.monto_actual);
 
@@ -125,11 +134,7 @@ export default function Dashboard() {
 
                   <div className="meta-dashboard-info">
                     <span>
-                      Monto Actual: {formatCurrency(meta.monto_actual)}
-                    </span>
-
-                    <span>
-                      Meta: {formatCurrency(meta.monto_objetivo)}
+                      {formatCurrency(meta.monto_actual)} de {formatCurrency(meta.monto_objetivo)}
                     </span>
                   </div>
 
